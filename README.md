@@ -1,4 +1,3 @@
-# Virtual-Cookbook-Platform
-Built using Django
-CRUD & social media functionalities
+# Exercise-Platform
+Django, Plotly , Bootstrap
 S
