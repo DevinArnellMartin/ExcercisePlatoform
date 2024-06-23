@@ -33,8 +33,8 @@ class RegistrationForm(UserCreationForm):
             )
         return user
 
-
+#TODO With model consolidation - make so form is concise with more fields and add exercises to it 
 class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
-        fields = ['title']
+        fields = ['title',"workout_type"]

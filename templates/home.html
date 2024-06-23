@@ -10,7 +10,7 @@
                 <p><a href="{% url 'main:WorkoutSession' WorkoutSession.title WorkoutSession.id %}">Delete{{WorkoutSession.title}}</a></p>
                 <p><a href="{% url 'main:WorkoutSession' WorkoutSession.id  %}"> Update {{WorkoutSession.title}}</a></p>
             {% endfor %}
-            {% endif %}
+        
 
     
         <h2>See your journey</h2>
@@ -22,15 +22,6 @@
                 {{ createWorkoutSession.as_p }}
                 <input value="Create" type="Submit"> 
         </form>  
-        
-        
-
-
-
-
-
-
-
     {% else %}
         <h1>Register an account</h1>
         <form method="post" action="{% url 'main:registration' %}">
@@ -39,5 +30,4 @@
             <input type="submit" value="Register">
         </form>
     {% endif %}
-    
 </body>

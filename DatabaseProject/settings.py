@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv #Keep to load .env variables 
+load_dotenv() 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)ufl1%f&fvtu$t3=ub2p%#fq$!3u5b)x=n9$()a&&7p^egol(f'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False if "RENDER" in os.environ else True
 
-ALLOWED_HOSTS = ['vcp-mxbu.onrender.com'] if "RENDER" in os.environ else ["*"]
+ALLOWED_HOSTS = ['exercise-platform.onrender.com'] if "RENDER" in os.environ else ["*"]
 
 
 # Application definition
@@ -79,19 +81,19 @@ WSGI_APPLICATION = 'DatabaseProject.wsgi.application'
 
 
 DATABASES = {
-     'default':  
-     dj_database_url.config(default=os.environ.get("DATABASE_URL"),engine="django.db.backends.postgresql"
-                             ,ssl_require=True,conn_max_age=600) if "DATABASE_URL" in os.environ else
-                             {
-        'ENGINE': 'django.db.backends.postgresql', 
-        'NAME': os.environ.get('name'),              
-        'USER': os.environ.get('username'),                
-        'PASSWORD': os.environ.get('password'),        
-        'HOST': 'localhost',                        
-        'PORT': '5432', 
-                             }  
+    'default': dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    ) if os.environ.get("DATABASE_URL") else {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('username'),
+        'USER': os.environ.get('username'),
+        'PASSWORD': os.environ.get('username'),
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
-
 
 
 

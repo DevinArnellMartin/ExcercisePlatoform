@@ -13,7 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import FormMixin
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-import plotly
+import pandas  as pd
+import plotly.express as px
 
 
 User = get_user_model()
@@ -116,7 +117,7 @@ def create_WorkoutSession(request):
         form = WorkoutSessionForm(request.POST)
         if form.is_valid():
             form = form.save(commit=False)
-            form.submission_user = request.user
+            form.user = request.user
             form.save()
             return redirect('main:home')
     else:
@@ -154,21 +155,35 @@ class WorkoutSessionDetail(DetailView):
 
 # NEW STUFF FOR PROJECT!
 def bmi_chart_view(request):
-    height = [150, 160, 170, 180, 190]
-    weight = [50, 60, 70, 80, 90]
-    bmi = [w / (h / 100) ** 2 for w, h in zip(weight, height)]
+    """Gets data from workout history to display"""
+
+    # Retrieve user's height and weight
+    profile = get_object_or_404(Profile, user=request.user)
+    height = profile.height
+    weight = profile.weight
+    curr_bmi = weight / (height / 100) ** 2 
+
+    data = {
+        'weight': [50, 60, 70, 80, 90],
+        'height': [150, 160, 170, 180, 190]
+    }
+    df = pd.DataFrame(data)
     
-    fig = plotly.express.scatter(x=height, y=weight, size=bmi, title='BMI Scatter Plot', labels={'x': 'Height', 'y': 'Weight'})
+    # Calculate BMI for the trend
+    df['bmi'] = df['weight'] / (df['height'] / 100) ** 2
+
+    # Create a scatter plot
+    fig = px.scatter(df, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
     bmi_plot = fig.to_html(full_html=False)
 
-    return render(request, 'home.html', context={'bmi_plot': bmi_plot})
+    return render(request, 'home.html', context={'bmi_plot': bmi_plot, 'bmi': curr_bmi})
 
 
 def weight_chart_view(request):
     """Fix"""
     weight = [50, 60, 70, 80, 90]
     
-    fig = plotly.express.scatter(x=weight, y=weight, title='Weight Scatter Plot', labels={'x': 'TODO', 'y': 'Weight'})
+    fig = px.scatter(x=weight, y=weight, title='Weight Scatter Plot', labels={'x': 'TODO', 'y': 'Weight'})
     bmi_plot = fig.to_html(full_html=False)
 
     return render(request, 'home.html', context={'bmi_plot': bmi_plot})
