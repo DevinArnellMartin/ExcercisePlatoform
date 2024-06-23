@@ -1,0 +1,43 @@
+{% include "base.html" %}
+<title>Exercise Platform</title>
+<body>
+    <h1>{{ title }}</h1>
+    {% if user.is_authenticated %}
+        <h2>Welcome {{user}}</h2>
+        <h2>Your Workouts</h2>
+            {% for workout in UserWorkoutSessions %}
+                <p><a href="{% url 'main:WorkoutSessionDetail' WorkoutSession.title WorkoutSession.id %}">{{ WorkoutSession.title }}</a></p>
+                <p><a href="{% url 'main:WorkoutSession' WorkoutSession.title WorkoutSession.id %}">Delete{{WorkoutSession.title}}</a></p>
+                <p><a href="{% url 'main:WorkoutSession' WorkoutSession.id  %}"> Update {{WorkoutSession.title}}</a></p>
+            {% endfor %}
+            {% endif %}
+
+    
+        <h2>See your journey</h2>
+        {{bmi_plot}}
+
+        <h2>Log a new workout</h2>
+        <form method="POST" action="{% url 'main:createWorkoutSession' %}">
+                {% csrf_token %}
+                {{ createWorkoutSession.as_p }}
+                <input value="Create" type="Submit"> 
+        </form>  
+        
+        
+
+
+
+
+
+
+
+    {% else %}
+        <h1>Register an account</h1>
+        <form method="post" action="{% url 'main:registration' %}">
+            {% csrf_token %}
+            {{ registration.as_p }}
+            <input type="submit" value="Register">
+        </form>
+    {% endif %}
+    
+</body>

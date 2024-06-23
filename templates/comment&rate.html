@@ -1,0 +1,8 @@
+{% include "base.html"}
+
+{% if request.user.is_authenticated %}
+<form method="post" action="#">
+    {% csrf_token %}
+    <input type="submit" value="Comment & Rate">
+</form>
+{% endif %}

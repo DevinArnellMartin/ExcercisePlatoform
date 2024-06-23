@@ -1,0 +1,54 @@
+{% include "base.html" %}
+{% comment %}  {% endcomment %}
+
+<head>
+    <title>{{ object.title }} - Recipe Detail</title>
+</head>
+<body>
+    <h1>{{ object.title  }}</h1>
+    <p><strong>Preparation Directions:</strong> {{ object.methods}}</p>
+    <p><strong>Diet:</strong> {{ object.diet}}</p>
+
+    <h2>Ingredients:</h2>
+    <ul>
+        {% for ingredient in object.ingredients.all %}
+            <li>{{ ingredient.name }}</li>
+        {% empty %}
+            <li>No ingredients available</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Ratings:</h2>
+    <ul>
+        {% for rating in object.reciperating_set.all %}
+            <li>Rated by {{ rating.rated_by.username }}: {{ rating.rating }}</li>
+        {% empty %}
+            <li>No ratings available</li>
+        {% endfor %}
+    </ul>
+    {% comment %} Throws an error DO NOT UNCOMMENT have to use FormMixin with DetailView but mus condense it into one form
+    {% endcomment %}
+    {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'main:comments&ratings' title=object.title recipe_id=object.recipe_id  %}">
+            {% csrf_token %}
+            {{ comment.as_p }}
+            <input type="submit" value="Comment">
+        </form>
+
+        <form method="post" action="{% url 'main:comments&ratings' title=object.title recipe_id=object.recipe_id  %}">
+            {% csrf_token %}
+            {{ rate.as_p }}
+            <input type="submit" value="Rate">
+        </form>
+    {% endif %}
+
+    <h2>Comments:</h2>
+    <ul>
+        {% for comment in object.comment_set.all %}
+            <li>Posted by {{ comment.userID }} on {{ comment.date_posted }}: {{ comment.content }}</li>
+        {% empty %}
+            <li>No comments available</li>
+        {% endfor %}
+    </ul>
+</body>
+
