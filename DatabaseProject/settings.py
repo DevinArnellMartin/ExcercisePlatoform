@@ -87,9 +87,9 @@ DATABASES = {
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('username'),
-        'USER': os.environ.get('username'),
-        'PASSWORD': os.environ.get('username'),
+        'NAME':"ExercisePlatformDB",
+        'USER':"postgres", # os.environ.get('username')
+        'PASSWORD': "fuckinghell",
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -141,6 +141,6 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'main:home'
 LOGOUT_REDIRECT_URL ='main:home'
-AUTH_USER_MODEL = "Main.User"
+AUTH_USER_MODEL = 'Main.User'
 
 

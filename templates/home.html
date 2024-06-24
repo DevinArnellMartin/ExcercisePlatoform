@@ -11,10 +11,21 @@
                 <p><a href="{% url 'main:WorkoutSession' WorkoutSession.id  %}"> Update {{WorkoutSession.title}}</a></p>
             {% endfor %}
         
-
-    
         <h2>See your journey</h2>
-        {{bmi_plot}}
+
+        {% if bmi %}
+        <h2>Your Current: {{ bmi }}</h2>
+        <h2>Your Goal: {{ goal_bmi }} </h2>
+        {% endif %}
+        
+        {% if bmi_plot %}
+            <div>{{ bmi_plot|safe }}</div>
+        {% endif %}
+        
+        {% if weight_plot %}
+            <div>{{ weight_plot|safe }}</div>
+        {% endif %}
+        
 
         <h2>Log a new workout</h2>
         <form method="POST" action="{% url 'main:createWorkoutSession' %}">

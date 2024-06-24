@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+{% comment %} Can be used to render any graph full screen {% endcomment %}
 <html>
 <head>
     <title>BMI Chart</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
+{{ bmi }}
 <body>
     <h1>BMI Scatter Plot</h1>
     <div id="plotly-chart">{{ bmi_plot |safe }}</div>

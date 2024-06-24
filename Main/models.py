@@ -19,14 +19,19 @@ class User(AbstractUser):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    height = models.IntegerField()  #TODO Height in centimeters
-    weight = models.IntegerField()  #TODO Weight in kilograms
+    height = models.FloatField()  
+    weight = models.FloatField()  
     BMI = models.FloatField(null=True, blank=True)  
+    Goal_BMI = models.FloatField(null=True , blank=True)
+    Goal_Weight = models.FloatField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        """Converts into appopriate units to calculate BMI"""
         if self.height and self.weight:
-            height_in_meters = self.height / 100
-            self.BMI = self.weight / (height_in_meters ** 2)
+            # height_in_meters = self.height / 100
+            self.height = self.height /100
+            self.weight = self.weight * .4535 
+            self.BMI = self.weight / (self.height ** 2)
         super(Profile, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -66,7 +71,7 @@ class WorkoutSession(models.Model):
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
-    duration = models.TimeField()
+    duration = models.TimeField(blank=True,null=False)
     workout_type = models.CharField(
         max_length=20,
         choices=WorkoutType.choices,

@@ -16,10 +16,14 @@ class RegistrationForm(UserCreationForm):
     height = forms.IntegerField()
     weight = forms.IntegerField()
 
-    class Meta:
+    class Meta: 
         model = User
         fields = ['username', 'password1', 'password2', 'height', 'weight']
-
+        labels = {
+            'height': 'Meters',
+            'weight': 'Kilograms'
+            }
+    #TODO Check with save method in model  for Profile to make sure it is not doing the BMI twice
     def save(self, commit=True):
         user = super(RegistrationForm, self).save(commit=False)
         user.set_password(self.cleaned_data["password1"])
@@ -29,7 +33,7 @@ class RegistrationForm(UserCreationForm):
                 user=user,
                 height=self.cleaned_data['height'],
                 weight=self.cleaned_data['weight'],
-                BMI=self.cleaned_data['weight'] / ((self.cleaned_data['height'] / 100) ** 2)  # Calculate BMI
+                BMI=self.cleaned_data['weight'] / ((self.cleaned_data['height'] / 100) ** 2)  
             )
         return user
 
@@ -37,4 +41,4 @@ class RegistrationForm(UserCreationForm):
 class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
-        fields = ['title',"workout_type"]
+        fields = ['title',"workout_type","duration"]

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from Main.models import *
 from .forms import *
-from django.contrib.auth import login,authenticate
+from django.contrib.auth import login,authenticate,logout as dj_logout
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.views.generic.list import ListView
@@ -11,7 +11,7 @@ from django.views import View
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import FormMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotAllowed
 from django.contrib.auth.models import User
 import pandas  as pd
 import plotly.express as px
@@ -19,6 +19,7 @@ import plotly.express as px
 
 User = get_user_model()
 
+#TODO User superuser - create a bunch of WorkoutSession objects through a super user  and use it for dataframes
 """
 "id" is a the PK (actually called "id" ) of the Member field
 """
@@ -49,8 +50,6 @@ class WorkoutSessionListSearch(ListView):
     template_name = "search.html"
     model= WorkoutSession
 
-    #def get(self):
-       
     def get_queryset(self):
         """Return results by all fields 
         iexact = case insensitive
@@ -82,17 +81,44 @@ class WorkoutSessionListSearch(ListView):
         return context
 
 def home(request):
-    context = {'title':"Welcome to Excercise",
-                'UserWorkoutSessions':None,'updateWorkoutSession':None ,'createWorkoutSession':None , 
-                'registration':RegistrationForm(request.POST)}
+    """ EVERYTHING IS RENDER FROM THIS LOGIC ON THE HOMEPAGE """
+    context = {
+        'title': "Welcome to Exercise",
+        'registration': RegistrationForm(request.POST),
+        'bmi': None,
+        'bmi_plot': None,
+        'weight_plot': None,
+        "goal_bmi": None,
+    }
     if request.user.is_authenticated:
+        profile = get_object_or_404(Profile, user=request.user)
+        height = profile.height
+        weight = profile.weight
+        curr_bmi = weight / height  # Converserion Should be handled in models.py (height / 100) ** 2
+
         context['title'] = f"{request.user}'s Gym"
-        context['UserWorkoutSessions'] =  WorkoutSession.objects.filter(profile_id=request.user.id)     
-        context['createWorkoutSession']= WorkoutSessionForm()
+        context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile_id=request.user.id)
+        context['createWorkoutSession'] = WorkoutSessionForm()
+        context['bmi'] = curr_bmi
         context['registration'] = None
-    
-        
-    return render(request,"home.html",context)
+        context["goal_bmi"] = profile.Goal_BMI
+
+        # BMI Chart
+        bmi_data = {
+            'weight': [50, 60, 70, 80, 90],
+            'height': [150, 160, 170, 180, 190]
+        }
+        df_bmi = pd.DataFrame(bmi_data)
+        df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
+        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+        context['bmi_plot'] = fig_bmi.to_html(full_html=False)
+
+        # Weight Chart
+        weight_data = [50, 60, 70, 80, 90]
+        fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'TODO', 'y': 'Weight'})
+        context['weight_plot'] = fig_weight.to_html(full_html=False)
+
+    return render(request, 'home.html', context)
 
 def registration(request):
     title = ""
@@ -109,21 +135,29 @@ def registration(request):
     return render(request, 'home.html', {'title': title, 'registration': form})
 
 def logout(request):
-    messages.success(request,"Logout Successful")
+    if request.method == 'POST' or request.method == 'GET':
+        dj_logout(request)
+        messages.success(request,"Logout Successful")
+    else:
+        return HttpResponseNotAllowed(['POST', 'GET'])
+
+    
    
 def create_WorkoutSession(request):
-    title ="Create Workout"
+    title = "Create Workout"
+    
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
         if form.is_valid():
-            form = form.save(commit=False)
-            form.user = request.user
-            form.save()
+            workout_session = form.save(commit=False)
+            profile = get_object_or_404(Profile, user=request.user)
+            workout_session.profile = profile
+            workout_session.save()
             return redirect('main:home')
     else:
         form = WorkoutSessionForm()
     
-    return render(request, 'home.html', {'createWorkoutSession': form, "title":title })
+    return render(request, 'home.html', {'createWorkoutSession': form, "title": title})
 
 def update_WorkoutSession(request,WorkoutSession_id):
     WorkoutSession = get_object_or_404(WorkoutSession, WorkoutSession_id=WorkoutSession_id )
@@ -151,40 +185,3 @@ class WorkoutSessionDetail(DetailView):
         context = super(WorkoutSessionDetail, self).get_context_data(**kwargs)
         #context['object'] = WorkoutSession.objects.filter(WorkoutSession_id= self.kwargs.WorkoutSession_id, title = self.kwargs.title) 
         return context
-
-
-# NEW STUFF FOR PROJECT!
-def bmi_chart_view(request):
-    """Gets data from workout history to display"""
-
-    # Retrieve user's height and weight
-    profile = get_object_or_404(Profile, user=request.user)
-    height = profile.height
-    weight = profile.weight
-    curr_bmi = weight / (height / 100) ** 2 
-
-    data = {
-        'weight': [50, 60, 70, 80, 90],
-        'height': [150, 160, 170, 180, 190]
-    }
-    df = pd.DataFrame(data)
-    
-    # Calculate BMI for the trend
-    df['bmi'] = df['weight'] / (df['height'] / 100) ** 2
-
-    # Create a scatter plot
-    fig = px.scatter(df, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
-    bmi_plot = fig.to_html(full_html=False)
-
-    return render(request, 'home.html', context={'bmi_plot': bmi_plot, 'bmi': curr_bmi})
-
-
-def weight_chart_view(request):
-    """Fix"""
-    weight = [50, 60, 70, 80, 90]
-    
-    fig = px.scatter(x=weight, y=weight, title='Weight Scatter Plot', labels={'x': 'TODO', 'y': 'Weight'})
-    bmi_plot = fig.to_html(full_html=False)
-
-    return render(request, 'home.html', context={'bmi_plot': bmi_plot})
-

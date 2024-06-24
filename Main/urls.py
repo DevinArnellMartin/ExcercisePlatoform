@@ -4,7 +4,7 @@ from . import views as v
 
 urlpatterns = [
     path('', include("django.contrib.auth.urls")),
-    path('',v.home , name='home'), 
+    path('',v.home , name='home'),  
     path('workouts/',v.WorkoutSessionListSearch.as_view(),name="WorkoutSessionSearch"),
     path('workouts/<str:keyword>',v.WorkoutSessionListSearch.as_view(),name="WorkoutSessionSearch"),
     path('registration/', v.registration, name='registration'),
@@ -14,5 +14,5 @@ urlpatterns = [
     path('createWorkout/', v.create_WorkoutSession, name='createWorkoutSession'),
     path('updateWorkout/<int:id>',v.update_WorkoutSession,name="updateWorkoutSession"),
     path('detail/<str:title>/<int:id>',v.WorkoutSessionDetail.as_view(),name="WorkoutSessionDetail"),  
-    path('bmi/', v.bmi_chart_view, name='trendBMI'), 
+    
 ]
