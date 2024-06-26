@@ -3,6 +3,9 @@ from .models import *
 from django.contrib.auth.forms import UserCreationForm ,AuthenticationForm
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.forms.models import inlineformset_factory
+from django.forms import formset_factory
+
 
 User = get_user_model()
 
@@ -20,10 +23,10 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = ['username', 'password1', 'password2', 'height', 'weight']
         labels = {
-            'height': 'Meters',
+            'height': 'Meters', #TODO Add label next to fields.
             'weight': 'Kilograms'
             }
-    #TODO Check with save method in model  for Profile to make sure it is not doing the BMI twice
+    #TODO Check with save method in model for Profile to make sure it is not doing the BMI twice
     def save(self, commit=True):
         user = super(RegistrationForm, self).save(commit=False)
         user.set_password(self.cleaned_data["password1"])
@@ -42,3 +45,11 @@ class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
         fields = ['title',"workout_type","duration"]
+
+class SetForm(forms.ModelForm):
+    class Meta:
+        model = Set
+        fields = ['exercise', 'reps', 'weight']
+        
+SetFormSet = inlineformset_factory(WorkoutSession, Set, form=SetForm, extra=1, can_delete=True) # makes extra=n amount of forms
+# SetFormSet = formset_factory(Set,extra=5,can_delete=True,validate_max=5,validate_min=0)

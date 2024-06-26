@@ -37,7 +37,7 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
 
-#TODO:Fix model redundancy 
+#TODO:1.Fix SetFormSet or 2.Fix model redundancy 
 class Exercise(models.Model):
     class ExerciseType(models.TextChoices):
         CARDIO = 'Cardio', _('Cardio')
@@ -67,7 +67,7 @@ class WorkoutSession(models.Model):
         HIIT = 'HIIT', _('HIIT')
         CROSSFIT = 'Crossfit', _('Crossfit')
 
-    title = models.TextField(blank=True , null=False)
+    title = models.TextField(blank=True , null=False) #Might be redundant because of __str__ method
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)

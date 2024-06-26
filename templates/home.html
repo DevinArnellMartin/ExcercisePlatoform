@@ -1,44 +1,83 @@
 {% include "base.html" %}
 <title>Exercise Platform</title>
 <body>
-    <h1>{{ title }}</h1>
-    {% if user.is_authenticated %}
-        <h2>Welcome {{user}}</h2>
-        <h2>Your Workouts</h2>
-            {% for workout in UserWorkoutSessions %}
-                <p><a href="{% url 'main:WorkoutSessionDetail' WorkoutSession.title WorkoutSession.id %}">{{ WorkoutSession.title }}</a></p>
-                <p><a href="{% url 'main:WorkoutSession' WorkoutSession.title WorkoutSession.id %}">Delete{{WorkoutSession.title}}</a></p>
-                <p><a href="{% url 'main:WorkoutSession' WorkoutSession.id  %}"> Update {{WorkoutSession.title}}</a></p>
-            {% endfor %}
+    <div class="container mt-4">
+        <h1 class="text-center">{{ title }}</h1>
         
-        <h2>See your journey</h2>
+        {% if user.is_authenticated %}
+            <div class="welcome-section">
+                <h2 class="text-center">Welcome, {{ user }}</h2>
+            </div>
+            
+            <div class="workouts-section my-4">
+                <h2>Your Workouts</h2>
+                <div class="list-group">
+                    {% for workout in UserWorkoutSessions %}
+                        <div class="list-group-item">
+                            <a href="{% url 'main:WorkoutSessionDetail' WorkoutSession.title WorkoutSession.id %}" class="list-group-item-action">{{ WorkoutSession.title }}</a>
+                            <div class="d-flex justify-content-between mt-2">
+                                <a href="{% url 'main:WorkoutSession' WorkoutSession.title WorkoutSession.id %}" class="btn btn-danger btn-sm">Delete {{ WorkoutSession.title }}</a>
+                                <a href="{% url 'main:WorkoutSession' WorkoutSession.id %}" class="btn btn-warning btn-sm">Update {{ WorkoutSession.title }}</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-        {% if bmi %}
-        <h2>Your Current: {{ bmi }}</h2>
-        <h2>Your Goal: {{ goal_bmi }} </h2>
-        {% endif %}
-        
-        {% if bmi_plot %}
-            <div>{{ bmi_plot|safe }}</div>
-        {% endif %}
-        
-        {% if weight_plot %}
-            <div>{{ weight_plot|safe }}</div>
-        {% endif %}
-        
+            <div class="journey-section my-4">
+                <h2>See your journey</h2>
 
-        <h2>Log a new workout</h2>
-        <form method="POST" action="{% url 'main:createWorkoutSession' %}">
-                {% csrf_token %}
-                {{ createWorkoutSession.as_p }}
-                <input value="Create" type="Submit"> 
-        </form>  
-    {% else %}
-        <h1>Register an account</h1>
-        <form method="post" action="{% url 'main:registration' %}">
-            {% csrf_token %}
-            {{ registration.as_p }}
-            <input type="submit" value="Register">
-        </form>
-    {% endif %}
+                {% if bmi %}
+                    <div class="alert alert-info">
+                        <h4>Your Current BMI: {{ bmi }}</h4>
+                        <h4>Your Goal BMI: {{ goal_bmi }}</h4>
+                    </div>
+                {% endif %}
+                
+                {% if bmi_plot %}
+                    <div class="plot-section">
+                        <div>{{ bmi_plot|safe }}</div>
+                    </div>
+                {% endif %}
+                
+                {% if weight_plot %}
+                    <div class="plot-section">
+                        <div>{{ weight_plot|safe }}</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="log-workout-section my-4">
+                <h2>Log a new workout</h2>
+                <form method="POST" action="{% url 'main:createWorkoutSession' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ createWorkoutSession.as_p }}  <!-- Render the main form -->
+                        {{ formset.management_form }}
+                        <div id="sets">
+                            {% for form in formset %}
+                            <div class="set-form">
+                                {{ form.as_p }}  <!-- Render each form in the formset -->
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </form>
+            </div>
+            
+        
+        {% else %}
+            <div class="register-section my-4">
+                <h1>Register an account</h1>
+                <form method="post" action="{% url 'main:registration' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ registration.as_p }}
+                    </div>
+                    <button type="submit" class="btn btn-success">Register</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
 </body>

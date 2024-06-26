@@ -1,3 +1,6 @@
+from typing import Any
+from django.db.models.base import Model as Model
+from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect, get_object_or_404
 from Main.models import *
 from .forms import *
@@ -18,8 +21,12 @@ import plotly.express as px
 
 
 User = get_user_model()
+SetFormSet = inlineformset_factory(WorkoutSession, Set, form=SetForm, extra=1, can_delete=True)
 
-#TODO User superuser - create a bunch of WorkoutSession objects through a super user  and use it for dataframes
+
+#TODO DEVIN:
+# Create superusers  & create a bunch of model objects through a super user and use it for dataframes
+# Push it to PostgresSQL DB on Render so website authentication works and test further on website any potential bugs
 """
 "id" is a the PK (actually called "id" ) of the Member field
 """
@@ -103,9 +110,9 @@ def home(request):
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
 
-        # BMI Chart
+        #TODO Get object attributes to populate charts (Use get_queryset against Profile w/ request.user ID)
         bmi_data = {
-            'weight': [50, 60, 70, 80, 90],
+            'weight': [50, 60, 70, 80, 90], 
             'height': [150, 160, 170, 180, 190]
         }
         df_bmi = pd.DataFrame(bmi_data)
@@ -129,7 +136,7 @@ def registration(request):
             login(request, user)
             return redirect('main:home')
         else:
-            messages.error(request, 'Those credentials do not work')
+            messages.error(request, 'Those credentials do not work') #TODO Make it not appear when password and user information is too similar
     else:
         form = RegistrationForm()
     return render(request, 'home.html', {'title': title, 'registration': form})
@@ -144,20 +151,27 @@ def logout(request):
     
    
 def create_WorkoutSession(request):
-    title = "Create Workout"
-    
+    title = "Create Workout" 
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
-        if form.is_valid():
+        formset = SetFormSet(request.POST) 
+        #TODO:Figure out why the SetFormSet is not rendering on home.html template. If fixed, model redudnacy does not need to be addressed in models.py
+        if form.is_valid() and formset.is_valid():
             workout_session = form.save(commit=False)
             profile = get_object_or_404(Profile, user=request.user)
             workout_session.profile = profile
             workout_session.save()
+            sets = formset.save(commit=False)
+            for set in sets:
+                set.workout_session = workout_session
+                set.save()
+            formset.save_m2m()
             return redirect('main:home')
-    else:
+    else:  
         form = WorkoutSessionForm()
+        formset = SetFormSet()
     
-    return render(request, 'home.html', {'createWorkoutSession': form, "title": title})
+    return render(request, 'home.html', {'createWorkoutSession': form, "formset": formset, "title": title})
 
 def update_WorkoutSession(request,WorkoutSession_id):
     WorkoutSession = get_object_or_404(WorkoutSession, WorkoutSession_id=WorkoutSession_id )
@@ -179,9 +193,11 @@ class WorkoutSessionDetail(DetailView):
     """Detail already has PK handling"""
     model = WorkoutSession
     template_name = "WorkoutSession_detail.html"
-    pk_url_kwarg = "WorkoutSession_id" #need to actually tell the DetailView that this is explicitly the PK
+    # pk_url_kwarg = "Workout_id" #need to actually tell the DetailView that this is explicitly the PK
+    slug_url_kwarg = "title"
 
     def get_context_data(self, **kwargs):
         context = super(WorkoutSessionDetail, self).get_context_data(**kwargs)
         #context['object'] = WorkoutSession.objects.filter(WorkoutSession_id= self.kwargs.WorkoutSession_id, title = self.kwargs.title) 
         return context
+    

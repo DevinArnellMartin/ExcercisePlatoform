@@ -1,5 +1,5 @@
 {% include "base.html" %}
-<title> Recipe Search </title>
+<title> Workout History Search </title>
 
 <form action="{% url 'main:WorkoutSessionSearch' %}" method="GET">
     Search <input type="text" name="keyword" value="{{ keyword }}" placeholder="Keyword Search"/>
@@ -7,15 +7,13 @@
 </form>
 
 <h1>Results</h1>
-        {% for workout in object_list %}
-            <a href="{% url 'main:WorkoutSessionDetail'  title=WorkoutSession.title WorkoutSession_id=WorkoutSession.id %}">{{ recipe.title }}</a>
+        {% for workout in object_list %} {% comment %}#TODO:Fix the args passed in href below through Main.url.py and views.py  {% endcomment%}
+            <a href="{% url 'main:WorkoutSessionDetail' title=title %}">{{ workout.title }}</a>
         {% endfor %}
 
 {% if not object_list  and  user.is_authenticated %}
-<p>That recipe does not exist yet. You can add that as a new recipe <a href="{% url 'main:createWorkoutSession' %}">here</a></p>
+<p> No record of that workout. Add it <a href="{% url 'main:createWorkoutSession' %}">here</a></p>
 {% endif %}
-
-{% comment %}TODO Figure out how to display all recipes without overriding the logic here {% endcomment %}
 
 
 

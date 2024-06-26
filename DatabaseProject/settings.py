@@ -86,10 +86,10 @@ DATABASES = {
         conn_max_age=600,
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME':"ExercisePlatformDB",
-        'USER':"postgres", # os.environ.get('username')
-        'PASSWORD': "fuckinghell",
+        'ENGINE': 'django.db.backends.postgresql', #NOTE  Change to .mssql or check with Django docs to see test it on local instance
+        'NAME': os.environ.get('username'),
+        'USER': os.environ.get('username'), # os.environ.get('username')
+        'PASSWORD': os.environ.get('username'),
         'HOST': 'localhost',
         'PORT': '5432',
     }
