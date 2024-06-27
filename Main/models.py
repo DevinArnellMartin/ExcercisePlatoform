@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 to_field attr => lets Django know which field to reference of the relationship default would be the primary key which is usually a number
 
 """
+#TODO Keep track of weight-change history
 class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     BMI = models.FloatField(null=True, blank=True)  # Allow null and blank values initially
@@ -37,7 +38,7 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
 
-#TODO:1.Fix SetFormSet or 2.Fix model redundancy 
+#Fix model redundancy?
 class Exercise(models.Model):
     class ExerciseType(models.TextChoices):
         CARDIO = 'Cardio', _('Cardio')
@@ -71,7 +72,9 @@ class WorkoutSession(models.Model):
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
-    duration = models.TimeField(blank=True,null=False)
+    start_time = models.TimeField(blank=True,null=False) 
+    end_time = models.TimeField(blank=True,null=False)
+    duration = models.DurationField(blank=False,null=False)
     workout_type = models.CharField(
         max_length=20,
         choices=WorkoutType.choices,

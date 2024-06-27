@@ -44,12 +44,13 @@ class RegistrationForm(UserCreationForm):
 class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
-        fields = ['title',"workout_type","duration"]
+        fields = ['title',"workout_type","start_time","end_time"]
 
 class SetForm(forms.ModelForm):
     class Meta:
         model = Set
         fields = ['exercise', 'reps', 'weight']
         
-SetFormSet = inlineformset_factory(WorkoutSession, Set, form=SetForm, extra=1, can_delete=True) # makes extra=n amount of forms
-# SetFormSet = formset_factory(Set,extra=5,can_delete=True,validate_max=5,validate_min=0)
+# SetFormSet = formset_factory( Set, extra=5, can_delete=True,max_num=5 ,min_num= 2) # makes extra=n amount of forms
+SetFormSet = inlineformset_factory(WorkoutSession,Set,extra=5,can_delete=True,validate_max=5,validate_min=2 , 
+                                   min_num=2, max_num=5,exclude=('workout_session',))

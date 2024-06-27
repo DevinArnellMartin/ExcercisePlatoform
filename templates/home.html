@@ -49,18 +49,18 @@
 
             <div class="log-workout-section my-4">
                 <h2>Log a new workout</h2>
-                <form method="POST" action="{% url 'main:createWorkoutSession' %}">
+                <form method="POST"  action="{% url 'main:createWorkoutSession' %}">
                     {% csrf_token %}
-                    <div class="form-group">
-                        {{ createWorkoutSession.as_p }}  <!-- Render the main form -->
+                    <div class="form-group"> {% comment %} #TODO PRETTIFY THIS {% endcomment %}
+                        {{ createWorkoutSession.as_p }}  
                         {{ formset.management_form }}
-                        <div id="sets">
+                        {{ form.non_form_errors }}
                             {% for form in formset %}
-                            <div class="set-form">
-                                {{ form.as_p }}  <!-- Render each form in the formset -->
-                            </div>
+                                {{ form.as_table }} 
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
                             {% endfor %}
-                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Create</button>
                 </form>

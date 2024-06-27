@@ -10,18 +10,20 @@ from django.contrib.auth.views import LoginView
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.db.models import Q
-from django.views import View
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import FormMixin
 from django.http import HttpResponse, HttpResponseNotAllowed
-from django.contrib.auth.models import User
 import pandas  as pd
 import plotly.express as px
+import datetime
 
 
 User = get_user_model()
-SetFormSet = inlineformset_factory(WorkoutSession, Set, form=SetForm, extra=1, can_delete=True)
+#
+context = {
+}
+
 
 
 #TODO DEVIN:
@@ -66,7 +68,7 @@ class WorkoutSessionListSearch(ListView):
             try:
                 matching_date = list(WorkoutSession.objects.filter(date__iexact=keyword)) 
                 matching_duration = list(WorkoutSession.objects.filter(duration__iexact=keyword))
-                # matching_title = list(WorkoutSession.objects.filter(title__iexact=keyword))
+                matching_title = list(WorkoutSession.objects.filter(title__iexact=keyword))
 
                 date_condition = Q(date__iexact=keyword)
                 duration_condition = Q(duration__iexact=keyword)
@@ -88,7 +90,9 @@ class WorkoutSessionListSearch(ListView):
         return context
 
 def home(request):
+    #TODO or Work Around the Homepage rendering everything - maybe can bring the context dictionary out and selectively add KV pairs
     """ EVERYTHING IS RENDER FROM THIS LOGIC ON THE HOMEPAGE """
+    #global context?
     context = {
         'title': "Welcome to Exercise",
         'registration': RegistrationForm(request.POST),
@@ -109,6 +113,7 @@ def home(request):
         context['bmi'] = curr_bmi
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
+        context["formset"] = SetFormSet()
 
         #TODO Get object attributes to populate charts (Use get_queryset against Profile w/ request.user ID)
         bmi_data = {
@@ -151,21 +156,25 @@ def logout(request):
     
    
 def create_WorkoutSession(request):
+    #TODO Graphs do not stay up because they are passed in home view
     title = "Create Workout" 
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
         formset = SetFormSet(request.POST) 
-        #TODO:Figure out why the SetFormSet is not rendering on home.html template. If fixed, model redudnacy does not need to be addressed in models.py
+        #TODO:Actually test if the SetForm works as intended
         if form.is_valid() and formset.is_valid():
-            workout_session = form.save(commit=False)
             profile = get_object_or_404(Profile, user=request.user)
+            workout_session = form.save(commit=False)
             workout_session.profile = profile
+            start_time = form.cleaned_data['start_time']
+            end_time = form.cleaned_data['end_time']
+            duration = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time) #Added 
+            workout_session.duration = duration 
             workout_session.save()
             sets = formset.save(commit=False)
             for set in sets:
                 set.workout_session = workout_session
                 set.save()
-            formset.save_m2m()
             return redirect('main:home')
     else:  
         form = WorkoutSessionForm()
