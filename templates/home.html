@@ -16,8 +16,8 @@
                         <div class="list-group-item">
                             <a href="{% url 'main:WorkoutSessionDetail' WorkoutSession.title WorkoutSession.id %}" class="list-group-item-action">{{ WorkoutSession.title }}</a>
                             <div class="d-flex justify-content-between mt-2">
-                                <a href="{% url 'main:WorkoutSession' WorkoutSession.title WorkoutSession.id %}" class="btn btn-danger btn-sm">Delete {{ WorkoutSession.title }}</a>
-                                <a href="{% url 'main:WorkoutSession' WorkoutSession.id %}" class="btn btn-warning btn-sm">Update {{ WorkoutSession.title }}</a>
+                                <a href="{% url 'main:delete_WorkoutSession'  WorkoutSession.id WorkoutSession.title WorkoutSession.id %}" class="btn btn-danger btn-sm">Delete {{ WorkoutSession.title }}</a>
+                                <a href="{% url 'main:update_WorkoutSession' WorkoutSession.id %}" class="btn btn-warning btn-sm">Update {{ WorkoutSession.title }}</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -48,23 +48,43 @@
             </div>
 
             <div class="log-workout-section my-4">
-                <h2>Log a new workout</h2>
-                <form method="POST"  action="{% url 'main:createWorkoutSession' %}">
+                <h2>Log a New Workout</h2>
+                <form method="POST" action="{% url 'main:createWorkoutSession' %}">
                     {% csrf_token %}
-                    <div class="form-group"> {% comment %} #TODO PRETTIFY THIS {% endcomment %}
-                        {{ createWorkoutSession.as_p }}  
+                    <div class="form-group">
+                        {% comment %} Main form {% endcomment %}
+                        {{ createWorkoutSession.as_p }}
+                    </div>
+                    <div class="form-group">
+                        {% comment %} Management form for formset {% endcomment %}
                         {{ formset.management_form }}
-                        {{ form.non_form_errors }}
-                            {% for form in formset %}
-                                {{ form.as_table }} 
+                        {{ formset.non_form_errors }}
+                    </div>
+                    <div id="sets">
+                        {% for form in formset %}
+                            <div class="set-form border p-3 mb-2">
+                                {% comment %} Hidden fields for each form in the formset {% endcomment %}
                                 {% for hidden in form.hidden_fields %}
                                     {{ hidden }}
                                 {% endfor %}
-                            {% endfor %}
+                                {% comment %} Visible fields for each form in the formset {% endcomment %}
+                                <div class="form-row">
+                                    {% for field in form.visible_fields %}
+                                        <div class="form-group col-md-6">
+                                            {{ field.label_tag }} {{ field }}
+                                            {% if field.help_text %}
+                                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                     <button type="submit" class="btn btn-primary">Create</button>
                 </form>
             </div>
+            
             
         
         {% else %}

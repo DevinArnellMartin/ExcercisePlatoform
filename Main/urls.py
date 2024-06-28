@@ -13,6 +13,6 @@ urlpatterns = [
     path('deleteWorkout/<str:title>/<int:id>', v.delete_WorkoutSession, name='deleteWorkoutSession'),
     path('createWorkout/', v.create_WorkoutSession, name='createWorkoutSession'),
     path('updateWorkout/<int:id>',v.update_WorkoutSession,name="updateWorkoutSession"),
-    path('detail/<slug:title>',v.WorkoutSessionDetail.as_view(),name="WorkoutSessionDetail"),  
+    path('detail/<int:id>/<str:title>',v.WorkoutSessionDetail.as_view(),name="WorkoutSessionDetail"),  
     
 ]

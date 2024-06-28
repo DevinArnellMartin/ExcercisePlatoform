@@ -13,7 +13,8 @@ to_field attr => lets Django know which field to reference of the relationship d
 class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     BMI = models.FloatField(null=True, blank=True)  # Allow null and blank values initially
-
+    # height = models.FloatField()  
+    # weight = models.FloatField()  
     def __str__(self):
         return self.username
 
@@ -47,10 +48,9 @@ class Exercise(models.Model):
         HIIT = 'HIIT', _('HIIT')
         CROSSFIT = 'Crossfit', _('Crossfit')
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
     exercises = models.ManyToOneRel("WorkoutSession","WorkoutSession",
                                     field_name="exercise",related_name="exercises")
-    name = models.CharField(max_length=100)
     exercise_type = models.CharField(
         max_length=20,
         choices=ExerciseType.choices,
@@ -68,7 +68,7 @@ class WorkoutSession(models.Model):
         HIIT = 'HIIT', _('HIIT')
         CROSSFIT = 'Crossfit', _('Crossfit')
 
-    title = models.TextField(blank=True , null=False) #Might be redundant because of __str__ method
+    title = models.CharField(blank=True , null=False,max_length=100) #Migrate/Might be redundant because of __str__ method
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
@@ -94,8 +94,10 @@ class Set(models.Model):
     workout_session = models.ForeignKey(WorkoutSession, on_delete=models.CASCADE)
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     reps = models.IntegerField()
-    weight = models.FloatField()
+    weight = models.FloatField() # of equipment
+    # current_weight = models.FloatField()
 
+    
     def __str__(self):
         return f"{self.workout_session.profile.user.username} - {self.exercise.name} - {self.reps} reps @ {self.weight} lbs"
 

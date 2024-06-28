@@ -90,7 +90,7 @@ class WorkoutSessionListSearch(ListView):
         return context
 
 def home(request):
-    #TODO or Work Around the Homepage rendering everything - maybe can bring the context dictionary out and selectively add KV pairs
+    #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add KV pairs
     """ EVERYTHING IS RENDER FROM THIS LOGIC ON THE HOMEPAGE """
     #global context?
     context = {
@@ -156,7 +156,7 @@ def logout(request):
     
    
 def create_WorkoutSession(request):
-    #TODO Graphs do not stay up because they are passed in home view
+    #TODO  Graphs do no show up after submit becuase   - maybe use global context dictionary?
     title = "Create Workout" 
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
@@ -175,6 +175,7 @@ def create_WorkoutSession(request):
             for set in sets:
                 set.workout_session = workout_session
                 set.save()
+            formset.save_m2m()
             return redirect('main:home')
     else:  
         form = WorkoutSessionForm()
@@ -202,8 +203,8 @@ class WorkoutSessionDetail(DetailView):
     """Detail already has PK handling"""
     model = WorkoutSession
     template_name = "WorkoutSession_detail.html"
-    # pk_url_kwarg = "Workout_id" #need to actually tell the DetailView that this is explicitly the PK
     slug_url_kwarg = "title"
+    pk_url_kwarg = "id" #need to actually tell the DetailView that this is explicitly the PK
 
     def get_context_data(self, **kwargs):
         context = super(WorkoutSessionDetail, self).get_context_data(**kwargs)

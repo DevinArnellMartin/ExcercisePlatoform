@@ -7,8 +7,8 @@
 </form>
 
 <h1>Results</h1>
-        {% for workout in object_list %} {% comment %}#TODO:Fix the args passed in href below through Main.url.py and views.py  {% endcomment%}
-            <a href="{% url 'main:WorkoutSessionDetail' title=title %}">{{ workout.title }}</a>
+        {% for workout in object_list %} {% comment %}#TODO:PRETTIFY {% endcomment%}
+            <a href="{% url 'main:WorkoutSessionDetail' workout.id workout.title  %}">{{ workout.title }}</a>
         {% endfor %}
 
 {% if not object_list  and  user.is_authenticated %}
