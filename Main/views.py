@@ -72,8 +72,9 @@ class WorkoutSessionListSearch(ListView):
 
                 date_condition = Q(date__iexact=keyword)
                 duration_condition = Q(duration__iexact=keyword)
-                #TODO Toggle EXACT search with combined_condition = & with all these 
-                combined_condition =  date_condition | duration_condition
+                title_condition = Q(title__iexact=keyword)
+                #TODO Toggle EXACT search with combined_condition = & with all these . | means "OR"
+                combined_condition =  date_condition | duration_condition | title_condition
 
                 matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition) 
                 return matching_WorkoutSessions
@@ -88,18 +89,33 @@ class WorkoutSessionListSearch(ListView):
         context = super().get_context_data(**kwargs)
         context['keyword'] = self.request.GET.get('keyword','None')
         return context
+    
+@login_required
+def log_weight(request):
+    if request.method == 'POST':
+        form = WeightHeightEntryForm(request.POST)
+        if form.is_valid():
+            weight_entry = form.save(commit=False)
+            weight_entry.user = request.user
+            weight_entry.save()
+            return redirect('weight_history')
+    else:
+        form = WeightHeightEntryForm()
+    
+    return render(request, 'bmi.html', {'form': form})
 
 def home(request):
     #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add KV pairs
     """ EVERYTHING IS RENDER FROM THIS LOGIC ON THE HOMEPAGE """
     #global context?
     context = {
-        'title': "Welcome to Exercise",
+        'title': "Welcome to Gymcel-Hell",
         'registration': RegistrationForm(request.POST),
         'bmi': None,
         'bmi_plot': None,
         'weight_plot': None,
         "goal_bmi": None,
+        "H-W form":None
     }
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
@@ -114,7 +130,7 @@ def home(request):
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
         context["formset"] = SetFormSet()
-
+        context["H-W form"] = WeightHeightEntryForm(request.POST)
         #TODO Get object attributes to populate charts (Use get_queryset against Profile w/ request.user ID)
         bmi_data = {
             'weight': [50, 60, 70, 80, 90], 
@@ -122,13 +138,16 @@ def home(request):
         }
         df_bmi = pd.DataFrame(bmi_data)
         df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
-        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
         context['bmi_plot'] = fig_bmi.to_html(full_html=False)
 
         # Weight Chart
         weight_data = [50, 60, 70, 80, 90]
-        fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'TODO', 'y': 'Weight'})
+        fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'Workout?!', 'y': 'Weight'})
         context['weight_plot'] = fig_weight.to_html(full_html=False)
+
+        #TODO Height-to-weight Chare
+        
 
     return render(request, 'home.html', context)
 
@@ -156,7 +175,7 @@ def logout(request):
     
    
 def create_WorkoutSession(request):
-    #TODO  Graphs do no show up after submit becuase   - maybe use global context dictionary?
+    #TODO Graphs do no show up after submit becuase   - maybe use global context dictionary?
     title = "Create Workout" 
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
@@ -168,6 +187,7 @@ def create_WorkoutSession(request):
             workout_session.profile = profile
             start_time = form.cleaned_data['start_time']
             end_time = form.cleaned_data['end_time']
+            workout_session.curr_body_weight = profile.weight
             duration = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time) #Added 
             workout_session.duration = duration 
             workout_session.save()

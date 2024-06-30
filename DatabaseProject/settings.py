@@ -83,6 +83,7 @@ WSGI_APPLICATION = 'DatabaseProject.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get("DATABASE_URL"),
+        engine='django.db.backends.postgresql_psycopg2', #Added
         conn_max_age=600,
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {

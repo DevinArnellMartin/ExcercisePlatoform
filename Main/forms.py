@@ -25,7 +25,7 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = ['username', 'password1', 'password2', 'height', 'weight']
         labels = {
-            'height': 'Meters', #TODO Add label next to fields.
+            'height': 'Meters', #TODO Add label next to fields- HTML VIEW
             'weight': 'Kilograms'
             }
     #TODO Check with save method in model for Profile to make sure it is not doing the BMI twice
@@ -64,3 +64,9 @@ class SetForm(forms.ModelForm):
         
 SetFormSet = inlineformset_factory(WorkoutSession,Set,extra=5,can_delete=True,validate_min=True , 
                                    min_num=2, max_num=5,exclude=('workout_session',)) #add validate_max=True?
+
+class WeightHeightEntryForm(forms.ModelForm):
+    class Meta:
+        model = WeightHeightEntry
+        fields = ['weight','height']
+        labels = {'weight': 'Current Weight (kg)' ,'height': "Current Height (m)"}

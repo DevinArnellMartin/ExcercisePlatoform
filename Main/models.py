@@ -7,14 +7,13 @@ from django.utils.translation import gettext_lazy as _
 
 """
 to_field attr => lets Django know which field to reference of the relationship default would be the primary key which is usually a number
-
+Idea - forced to log weight before signing off
 """
-#TODO Keep track of weight-change history
+#TODO Keep track of weight-change history && figure out why FloatFields only allow integers and not floats
+#TODO In admin site, duration is a required field and not calculated from start_time - end_time
 class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     BMI = models.FloatField(null=True, blank=True)  # Allow null and blank values initially
-    # height = models.FloatField()  
-    # weight = models.FloatField()  
     def __str__(self):
         return self.username
 
@@ -71,6 +70,7 @@ class WorkoutSession(models.Model):
     title = models.CharField(blank=True , null=False,max_length=100) #Migrate/Might be redundant because of __str__ method
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    curr_body_weight = models.FloatField()
     date = models.DateTimeField(auto_now_add=True)
     start_time = models.TimeField(blank=True,null=False) 
     end_time = models.TimeField(blank=True,null=False)
@@ -95,9 +95,18 @@ class Set(models.Model):
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
     reps = models.IntegerField()
     weight = models.FloatField() # of equipment
-    # current_weight = models.FloatField()
+    
 
     
     def __str__(self):
         return f"{self.workout_session.profile.user.username} - {self.exercise.name} - {self.reps} reps @ {self.weight} lbs"
 
+#TODO Redundant but figure out how to integrate into things. Form in forms.py and render through home view and bmi.html
+class WeightHeightEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    weight = models.FloatField()
+    height = models.FloatField()
+    date_recorded = models.DateField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.weight} kg at {self.height} on {self.date_recorded}"

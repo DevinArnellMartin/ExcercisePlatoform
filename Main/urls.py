@@ -15,4 +15,5 @@ urlpatterns = [
     path('updateWorkout/<int:id>',v.update_WorkoutSession,name="updateWorkoutSession"),
     path('detail/<int:id>/<str:title>',v.WorkoutSessionDetail.as_view(),name="WorkoutSessionDetail"),  
     
+    
 ]
