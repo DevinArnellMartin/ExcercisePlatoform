@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  #False if "RENDER" in os.environ else True
 
-ALLOWED_HOSTS = ['exercise-platform.onrender.com'] if "RENDER" in os.environ else ["*"]
+ALLOWED_HOSTS = ['exercise-platform-1.onrender.com'] if "RENDER" in os.environ else ["*"]
 
 
 # Application definition
@@ -79,22 +79,22 @@ WSGI_APPLICATION = 'DatabaseProject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get("DATABASE_URL"),
-        engine='django.db.backends.postgresql_psycopg2', #Added
         conn_max_age=600,
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
         'ENGINE': 'django.db.backends.postgresql', #NOTE  Change to .mssql or check with Django docs to see test it on local instance
         'NAME': os.environ.get('username'),
-        'USER': os.environ.get('username'), # os.environ.get('username')
+        'USER': os.environ.get('username'), 
         'PASSWORD': os.environ.get('username'),
         'HOST': 'localhost',
         'PORT': '5432',
     }
-}
+    }
 
 
 
