@@ -6,7 +6,6 @@ from django.contrib.auth.models import User
 from django.forms.models import inlineformset_factory
 from django.forms import formset_factory
 from django.db.models.query import QuerySet
-from DatabaseProject.settings import DATABASES
 
 
 User = get_user_model()
@@ -18,28 +17,28 @@ class CustomLoginForm(AuthenticationForm):
         model = Profile 
         
 class RegistrationForm(UserCreationForm):
-    height = forms.IntegerField()
-    weight = forms.IntegerField()
-    
+    height = forms.FloatField(label="Height (m)")
+    weight = forms.FloatField(label="Weight (kg)")
+    goal_weight = forms.FloatField(label="Goal Weight")
+    goal_bmi = forms.FloatField(label="Goal BMI")
+    #TODO Not required: Radio button to convert to meters/kilograms 
     class Meta: 
         model = User
         fields = ['username', 'password1', 'password2', 'height', 'weight']
-        labels = {
-            'height': 'Meters', #TODO Add label next to fields- HTML VIEW
-            'weight': 'Kilograms'
-            }
-    #TODO Check with save method in model for Profile to make sure it is not doing the BMI twice
     def save(self, commit=True):
         user = super(RegistrationForm, self).save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-            profile = Profile.objects.create(
+            profile=Profile.objects.create(
                 user=user,
                 height=self.cleaned_data['height'],
                 weight=self.cleaned_data['weight'],
-                BMI=self.cleaned_data['weight'] / ((self.cleaned_data['height'] / 100) ** 2)  
+                Goal_BMI = self.cleaned_data['goal_bmi'],
+                Goal_Weight = self.cleaned_data['goal_weight']
             )
+            #Might be redundant BMI calc: Done in model.py Profile.save() method 
+            #BMI=self.cleaned_data['weight'] / ((self.cleaned_data['height'] / 100) ** 2),
         return user
 
 #TODO With model consolidation - make so form is concise with more fields and add exercises to it 

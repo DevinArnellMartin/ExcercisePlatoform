@@ -13,7 +13,6 @@ Idea - forced to log weight before signing off
 #TODO In admin site, duration is a required field and not calculated from start_time - end_time
 class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
-    BMI = models.FloatField(null=True, blank=True)  # Allow null and blank values initially
     def __str__(self):
         return self.username
 
@@ -29,7 +28,6 @@ class Profile(models.Model):
     def save(self, *args, **kwargs):
         """Converts into appopriate units to calculate BMI"""
         if self.height and self.weight:
-            # height_in_meters = self.height / 100
             self.height = self.height /100
             self.weight = self.weight * .4535 
             self.BMI = self.weight / (self.height ** 2)

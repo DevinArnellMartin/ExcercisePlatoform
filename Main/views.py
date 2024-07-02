@@ -22,6 +22,7 @@ import datetime
 User = get_user_model()
 #
 context = {
+    "title":None
 }
 
 
@@ -58,22 +59,21 @@ class CustomLoginView(LoginView):
 class WorkoutSessionListSearch(ListView):
     template_name = "search.html"
     model= WorkoutSession
-
+    
     def get_queryset(self):
         """Return results by all fields 
         iexact = case insensitive
-        Might be able to use slug-slug matches any ASCII characters & i think any field"""
+        Might be able to use slug-slug matches any ASCII characters & i think any field
+        """
         keyword = self.request.GET.get('keyword') #keyword is value in the URL definition in urls.py <str:keyword>
+        user= self.request.user
         if keyword is not None:
             try:
-                matching_date = list(WorkoutSession.objects.filter(date__iexact=keyword)) 
-                matching_duration = list(WorkoutSession.objects.filter(duration__iexact=keyword))
-                matching_title = list(WorkoutSession.objects.filter(title__iexact=keyword))
-
-                date_condition = Q(date__iexact=keyword)
-                duration_condition = Q(duration__iexact=keyword)
-                title_condition = Q(title__iexact=keyword)
-                #TODO Toggle EXACT search with combined_condition = & with all these . | means "OR"
+                #TODO Fix it so that it does not show everyone's only the user's
+                date_condition = Q(date__iexact=keyword,profile__iexact=user)
+                duration_condition = Q(duration__iexact=keyword,profile__iexact=user)
+                title_condition = Q(title__iexact=keyword,profile__iexact=user)
+                #TODO Extra Feauture:EXACT search with combined_condition = & with all these . | means "OR"
                 combined_condition =  date_condition | duration_condition | title_condition
 
                 matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition) 
@@ -105,8 +105,8 @@ def log_weight(request):
     return render(request, 'bmi.html', {'form': form})
 
 def home(request):
-    #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add KV pairs
-    """ EVERYTHING IS RENDER FROM THIS LOGIC ON THE HOMEPAGE """
+    #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add Key-Value pairs
+    """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
     #global context?
     context = {
         'title': "Welcome to Gymcel-Hell",
@@ -146,7 +146,7 @@ def home(request):
         fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'Workout?!', 'y': 'Weight'})
         context['weight_plot'] = fig_weight.to_html(full_html=False)
 
-        #TODO Height-to-weight Chare
+        #TODO Height-to-weight Chart && Before Logout is Clicked=>> Force User to Enter Weight
         
 
     return render(request, 'home.html', context)
@@ -160,7 +160,7 @@ def registration(request):
             login(request, user)
             return redirect('main:home')
         else:
-            messages.error(request, 'Those credentials do not work') #TODO Make it not appear when password and user information is too similar
+            messages.error(request, 'Those credentials do not work')
     else:
         form = RegistrationForm()
     return render(request, 'home.html', {'title': title, 'registration': form})
