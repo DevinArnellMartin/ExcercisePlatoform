@@ -88,9 +88,9 @@ DATABASES = {
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
         'ENGINE': 'django.db.backends.postgresql', #NOTE  Change to .mssql or check with Django docs to see test it on local instance
-        'NAME': os.environ.get('username'),
-        'USER': os.environ.get('username'), 
-        'PASSWORD': os.environ.get('username'),
+        'NAME': "ExercisePlatformDB",
+        'USER': "postgres", 
+        'PASSWORD': "fuckinghell",
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -144,4 +144,9 @@ LOGIN_REDIRECT_URL = 'main:home'
 LOGOUT_REDIRECT_URL ='main:home'
 AUTH_USER_MODEL = 'Main.User'
 
+#TODO Reminder Feature: Set on Render: DatbaseProject/celery.py and Main/task.py help this functionality
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False if "RENDER" in os.environ else True 
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 

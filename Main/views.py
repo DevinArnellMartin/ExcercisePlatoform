@@ -69,21 +69,20 @@ class WorkoutSessionListSearch(ListView):
         user= self.request.user
         if keyword is not None:
             try:
-                #TODO Fix it so that it does not show everyone's only the user's
                 date_condition = Q(date__iexact=keyword,profile__iexact=user)
                 duration_condition = Q(duration__iexact=keyword,profile__iexact=user)
                 title_condition = Q(title__iexact=keyword,profile__iexact=user)
-                #TODO Extra Feauture:EXACT search with combined_condition = & with all these . | means "OR"
+                #Extra Feauture:EXACT search with combined_condition = & with all these . | means "OR"
                 combined_condition =  date_condition | duration_condition | title_condition
 
-                matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition) 
+                matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition,profile__user=user) #TODO Check if can filter by both
                 return matching_WorkoutSessions
             except Exception as e:   
                 messages.warning(self.request,f'{e}')
                 pass
 
         else: 
-            return WorkoutSession.objects.all()
+            return WorkoutSession.objects.filter(profile__user=user)
     
     def get_context_data(self, *args,**kwargs):
         context = super().get_context_data(**kwargs)
@@ -106,6 +105,7 @@ def log_weight(request):
 
 def home(request):
     #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add Key-Value pairs
+    #TODO Form - Make a chart-based on X and Y and Z axis
     """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
     #global context?
     context = {
@@ -115,13 +115,15 @@ def home(request):
         'bmi_plot': None,
         'weight_plot': None,
         "goal_bmi": None,
-        "H-W form":None
+        "H-W plot":None,
+        "conglomerate_plot":None,
+        "exercise_circle_graph":None,
     }
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
         height = profile.height
         weight = profile.weight
-        curr_bmi = weight / height  # Converserion Should be handled in models.py (height / 100) ** 2
+        curr_bmi = weight / height  # 
 
         context['title'] = f"{request.user}'s Gym"
         context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile_id=request.user.id)
@@ -131,22 +133,35 @@ def home(request):
         context["goal_bmi"] = profile.Goal_BMI
         context["formset"] = SetFormSet()
         context["H-W form"] = WeightHeightEntryForm(request.POST)
-        #TODO Get object attributes to populate charts (Use get_queryset against Profile w/ request.user ID)
+      
+        #TODO Fix 
         bmi_data = {
-            'weight': [50, 60, 70, 80, 90], 
-            'height': [150, 160, 170, 180, 190]
+        'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions']],
+        'height': [request.user.height for _ in range(len(context['UserWorkoutSessions']))]
         }
+
+        # Creating DataFrame and calculating BMI
         df_bmi = pd.DataFrame(bmi_data)
         df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
-        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='BMI Scatter Plot', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
+
+         # Creating the scatter plot
+        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='Height vs. Weight', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
+
         context['bmi_plot'] = fig_bmi.to_html(full_html=False)
 
         # Weight Chart
-        weight_data = [50, 60, 70, 80, 90]
-        fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'Workout?!', 'y': 'Weight'})
-        context['weight_plot'] = fig_weight.to_html(full_html=False)
+        # weight_data = [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions']] 
+        # fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'Weight @ Workout', 'y': 'Weight'})
+        # context['weight_plot'] = fig_weight.to_html(full_html=False)
 
-        #TODO Height-to-weight Chart && Before Logout is Clicked=>> Force User to Enter Weight
+        #TODO Height-to-weight Chart && Before Logout is Clicked =>> Force User to Enter Weight
+
+
+        #TODO Height-Weight-Time Plot
+        # df = px.data.iris()
+        # fig = px.scatter_3d(df, x='sepal_length', y='sepal_width', z='petal_width',
+        #       color='species')
+        # fig.show()
         
 
     return render(request, 'home.html', context)
@@ -167,6 +182,7 @@ def registration(request):
 
 def logout(request):
     if request.method == 'POST' or request.method == 'GET':
+        #redirect()
         dj_logout(request)
         messages.success(request,"Logout Successful")
     else:
@@ -228,6 +244,7 @@ class WorkoutSessionDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(WorkoutSessionDetail, self).get_context_data(**kwargs)
-        #context['object'] = WorkoutSession.objects.filter(WorkoutSession_id= self.kwargs.WorkoutSession_id, title = self.kwargs.title) 
+        workout_session = self.get_object()
+        context['sets'] = Set.objects.filter(workout_session=workout_session)
         return context
     

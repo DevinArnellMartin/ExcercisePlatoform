@@ -4,8 +4,17 @@
 <head>
     <title>{{ object.title }} - Workout </title>
 </head>
+
 <body>
     <h1>{{ object.title }}</h1>
-    <p> {{ object.workout_type }}</p>
-    <p> {{ object.duration }}</p>
+        <p> {{ object.workout_type }}</p>
+        <p> {{ object.duration }}</p>
+
+
+        {% for set in sets %}
+        {{ set }}
+    {% endfor %}
+</body>
+    
+    
 

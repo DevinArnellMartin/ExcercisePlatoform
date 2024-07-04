@@ -56,17 +56,20 @@
                         {{ createWorkoutSession.as_p }}
                     </div>
                     <div class="form-group">
-                        {% comment %} Management form for formset {% endcomment %}
                         {{ formset.management_form }}
                         {{ formset.non_form_errors }}
                     </div>
                     <div id="sets">
                         {% for form in formset %}
                             <div class="set-form border p-3 mb-2">
-                                {% comment %} Hidden fields for each form in the formset {% endcomment %}
+                                {{ form.exercise_name.label_tag }} {{ form.exercise_name }}
+                                {% comment %} Hidden fields for each form in the formset 
                                 {% for hidden in form.hidden_fields %}
                                     {{ hidden }}
+                                
                                 {% endfor %}
+                                {% endcomment %}
+
                                 {% comment %} Visible fields for each form in the formset {% endcomment %}
                                 <div class="form-row">
                                     {% for field in form.visible_fields %}
