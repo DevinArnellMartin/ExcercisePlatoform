@@ -88,9 +88,9 @@ DATABASES = {
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
         'ENGINE': 'django.db.backends.postgresql', #NOTE  Change to .mssql or check with Django docs to see test it on local instance
-        'NAME': "ExercisePlatformDB",
-        'USER': "postgres", 
-        'PASSWORD': "fuckinghell",
+        'NAME': "null",
+        'USER': "null", 
+        'PASSWORD': "null",
         'HOST': 'localhost',
         'PORT': '5432',
     }
