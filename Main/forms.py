@@ -1,3 +1,4 @@
+from typing import Any
 from django import forms
 from .models import *
 from django.contrib.auth.forms import UserCreationForm ,AuthenticationForm
@@ -26,6 +27,7 @@ class RegistrationForm(UserCreationForm):
     goal_weight = forms.FloatField(label="Goal Weight")
     goal_bmi = forms.FloatField(label="Goal BMI")
     #TODO Not required: Radio button to convert to meters/kilograms 
+    #TODO Provide help text: For Registration Fields
     class Meta: 
         model = User
         fields = ['username', 'password1', 'password2', "email" ,'height', 'weight']
@@ -52,29 +54,62 @@ class WorkoutSessionForm(forms.ModelForm):
 
 
 class SetForm(forms.ModelForm):
-    #TODO Figure out why this field is not showing up at all
-    exercise_name = forms.CharField(max_length=100,required=False,label="New Exercise",
-                                    help_text="Do not see an excercise: Add one",strip=True,
-                                    show_hidden_initial=True, error_messages={"a":"Must Select An Exercise or Add Another One"})
-
+    #TODO VERY IMPORTANT  TO FIX: exerciseName field is still not showing up 
+    exerciseName = forms.CharField(max_length=100,strip=True,required=False,label="New Exercise",
+                                    help_text="Do not see an excercise: Add one",
+                                    show_hidden_initial=True, error_messages={"Must Add Exercise":"Must Select An Exercise or Add Another One"} ,
+                                    disabled=False)
     class Meta:
         model = Set
         fields = ['exercise', 'reps', 'weight']
-
-    def save(self,commit=False):
-        exercise_name = self.cleaned_data.get('exercise_name')
-        if exercise_name:
-            exercise, created = Exercise.objects.get_or_create(name=exercise_name)
-            self.instance.exercise = exercise
-            return super(SetForm, self).save(commit=True)
         
-        elif self.cleaned_data.get('exercise') == None  and exercise_name == None:
-            raise ValidationError("Must Select An Exercise or Add Another One")
+    def clean(self):
+        cleaned_data = super().clean()
+        exercise_name = self.cleaned_data.get('exerciseName')
+        exercise = self.cleaned_data.get('exercise')
+
+        if not exercise_name and not exercise:
+            raise ValidationError("Must list an exercise")
+        if exercise_name == Exercise.objects.filter(name=exercise).exists():
+            raise ValidationError("Already exists")
+        
+        if exercise not in Exercise.objects.filter and exercise is not None:
+            exercise, created = Exercise.objects.create(name=exercise_name)
+            self.instance.exercise = exercise
+
+        return cleaned_data
+
+    def save(self,commit=True):
+        # exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+        # exercise_name = self.cleaned_data.get('exercise_name')
+        # if exercise_name:
+        #     exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+        #     self.instance.exercise = exercise
+        return super(SetForm, self).save(commit=commit)
         
     
         
 SetFormSet = inlineformset_factory(WorkoutSession,Set,extra=5,validate_min=True , 
                                    min_num=1, max_num=5,exclude=('workout_session',)) #add validate_max=True? can_delete=True
+class BugForm(forms.Form):
+    """Does not need a model; send straight to email"""
+    #Extra : Next sprint cycle => autopopulate to user whom has an account their email address
+    email = forms.EmailField(required=False,
+                             help_text="Enter email incase we need to follow up on the bug",
+                             error_messages={"Invalid":"Invalid Email Address"}
+                             ,empty_value="Your email")
+    desc = forms.TextInput() #TODO 
+    type = forms.RadioSelect(choices=[("Severe","Severe"),
+                                      ("Not Severe", 'Not Severe'),
+                                      ("Suggestion", "Suggesstion"),]) #Extra
+    
+    # type_widget = forms.ChoiceWidget(choices=[("Severe","Severe"),
+    #                                   ("Not Severe", 'Not Severe'),
+    #                                   ("Suggestion", "Suggesstion"),])#Extra
+    
+    def clean(self) -> dict[str, Any]:
+        """If valid, send. Else throw error."""
+        return super().clean()
 
 class WeightHeightEntryForm(forms.ModelForm):
     class Meta:

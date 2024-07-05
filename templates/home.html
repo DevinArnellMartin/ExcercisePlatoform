@@ -3,21 +3,19 @@
 <body>
     <div class="container mt-4">
         <h1 class="text-center">{{ title }}</h1>
-        
         {% if user.is_authenticated %}
             <div class="welcome-section">
-                <h2 class="text-center">Welcome, {{ user }}</h2>
             </div>
             
             <div class="workouts-section my-4">
-                <h2>Your Workouts</h2>
+                <h2>Your Recent Workouts</h2>
                 <div class="list-group">
                     {% for workout in UserWorkoutSessions %}
                         <div class="list-group-item">
-                            <a href="{% url 'main:WorkoutSessionDetail' WorkoutSession.title WorkoutSession.id %}" class="list-group-item-action">{{ WorkoutSession.title }}</a>
+                            <a href="{% url 'main:WorkoutSessionDetail' workout.id workout.title %}" class="list-group-item-action">{{ workout.title }}</a>
                             <div class="d-flex justify-content-between mt-2">
-                                <a href="{% url 'main:delete_WorkoutSession'  WorkoutSession.id WorkoutSession.title WorkoutSession.id %}" class="btn btn-danger btn-sm">Delete {{ WorkoutSession.title }}</a>
-                                <a href="{% url 'main:update_WorkoutSession' WorkoutSession.id %}" class="btn btn-warning btn-sm">Update {{ WorkoutSession.title }}</a>
+                                <a href="{% url 'main:delete_WorkoutSession' workout.title workout.id %}" class="btn btn-danger btn-sm">Delete {{ workout.title }}</a>
+                                <a href="{% url 'main:update_WorkoutSession' workout.id %}" class="btn btn-warning btn-sm">Update {{ workout.title }}</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -52,27 +50,21 @@
                 <form method="POST" action="{% url 'main:createWorkoutSession' %}">
                     {% csrf_token %}
                     <div class="form-group">
-                        {% comment %} Main form {% endcomment %}
                         {{ createWorkoutSession.as_p }}
                     </div>
                     <div class="form-group">
-                        {{ formset.management_form }}
-                        {{ formset.non_form_errors }}
+                        {% comment %} {{ formset.management_form }} {% endcomment %}
                     </div>
                     <div id="sets">
-                        {% for form in formset %}
+                        {% for f in formset %}
                             <div class="set-form border p-3 mb-2">
-                                {{ form.exercise_name.label_tag }} {{ form.exercise_name }}
-                                {% comment %} Hidden fields for each form in the formset 
-                                {% for hidden in form.hidden_fields %}
+                                {{ f.labels.exercise_name }}
+                                {% comment %} Hidden fields for each form in the formset{% endcomment %}
+                                {% for hidden in f.hidden_fields %}
                                     {{ hidden }}
-                                
                                 {% endfor %}
-                                {% endcomment %}
-
-                                {% comment %} Visible fields for each form in the formset {% endcomment %}
                                 <div class="form-row">
-                                    {% for field in form.visible_fields %}
+                                    {% for field in f.visible_fields %}
                                         <div class="form-group col-md-6">
                                             {{ field.label_tag }} {{ field }}
                                             {% if field.help_text %}

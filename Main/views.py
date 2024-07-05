@@ -20,7 +20,6 @@ import datetime
 
 
 User = get_user_model()
-#
 context = {
     "title":None
 }
@@ -66,7 +65,7 @@ class WorkoutSessionListSearch(ListView):
         Might be able to use slug-slug matches any ASCII characters & i think any field
         """
         keyword = self.request.GET.get('keyword') #keyword is value in the URL definition in urls.py <str:keyword>
-        user= self.request.user
+        user = self.request.user
         if keyword is not None:
             try:
                 date_condition = Q(date__iexact=keyword,profile__iexact=user)
@@ -103,9 +102,16 @@ def log_weight(request):
     
     return render(request, 'bmi.html', {'form': form})
 
+
+def bug(request):
+    context = {
+        "bug":BugForm(request.POST)
+    }
+    return render(request,'bug.html', context)
+
 def home(request):
     #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add Key-Value pairs
-    #TODO Form - Make a chart-based on X and Y and Z axis
+    #TODO Extra Could be moved to next sprint cycle - Make a chart-based on X and Y and Z axis
     """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
     #global context?
     context = {
@@ -121,12 +127,10 @@ def home(request):
     }
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
-        height = profile.height
-        weight = profile.weight
-        curr_bmi = weight / height  # 
+        curr_bmi = profile.weight / (profile.height **2)  #no 
 
         context['title'] = f"{request.user}'s Gym"
-        context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile_id=request.user.id)
+        context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile__user=request.user.id)
         context['createWorkoutSession'] = WorkoutSessionForm()
         context['bmi'] = curr_bmi
         context['registration'] = None
@@ -137,7 +141,7 @@ def home(request):
         #TODO Fix 
         bmi_data = {
         'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions']],
-        'height': [request.user.height for _ in range(len(context['UserWorkoutSessions']))]
+        'height': [profile.height for _ in range(len(context['UserWorkoutSessions']))]
         }
 
         # Creating DataFrame and calculating BMI
@@ -175,7 +179,7 @@ def registration(request):
             login(request, user)
             return redirect('main:home')
         else:
-            messages.error(request, 'Those credentials do not work')
+            messages.error(request, 'Those credentials do not work') 
     else:
         form = RegistrationForm()
     return render(request, 'home.html', {'title': title, 'registration': form})
