@@ -1,11 +1,5 @@
 <html lang="en">
 <head>
-        <style>
-                nav{
-                        flex-flow: row wrap;
-                        gap:10px;     
-                }
-        </style>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#7952b0">
@@ -13,7 +7,6 @@
     {% comment %} CDN to display graphs- DONT REMOVE {% endcomment %}
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
-
 <body>
         {% if messages %}
                 <ul class="messages">
@@ -36,6 +29,7 @@
                                         </form>
                                     </li>
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:home' %}">Home</a></li> 
+                                <li class="nav-item"><a class="nav-link" href="{% url 'main:statistics' %}">Statistics</a></li> 
                                 {% else %}
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:login' %}">Login</a></li>
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:registration' %}">Registration</a></li>

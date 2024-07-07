@@ -99,7 +99,7 @@ class Set(models.Model):
 
 #TODO Redundant but figure out how to integrate into things. Form in forms.py and render through home view and bmi.html
 class WeightHeightEntry(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE) #Migrate:Every model connects to Profile and only the Profile connects to the User
     weight = models.FloatField()
     height = models.FloatField()
     date_recorded = models.DateField(auto_now_add=True)

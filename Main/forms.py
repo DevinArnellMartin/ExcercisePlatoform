@@ -45,6 +45,12 @@ class RegistrationForm(UserCreationForm):
             )
         return user
 
+class ReminderForm(forms.Form):
+    #TODO Implement
+    workout_type = None  # SHould be Multiselect with the fields in the Workout Model
+    time_duration = forms.DateTimeField(help_text="Enter in format:#TODO Figure out datetime format") #Help text
+    reciever = forms.EmailField(help_text="Email to recieve reminder. Could also use phone number if you know your carrier")
+
 class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
@@ -53,15 +59,15 @@ class WorkoutSessionForm(forms.ModelForm):
 
 
 
-class SetForm(forms.ModelForm):
-    #TODO VERY IMPORTANT  TO FIX: exerciseName field is still not showing up 
-    exerciseName = forms.CharField(max_length=100,strip=True,required=False,label="New Exercise",
+class SetForm(forms.Form):
+    #TODO Figure out why field is still not being added into this
+    new_exercise = forms.CharField(required=True,label="New Exercise",
                                     help_text="Do not see an excercise: Add one",
-                                    show_hidden_initial=True, error_messages={"Must Add Exercise":"Must Select An Exercise or Add Another One"} ,
-                                    disabled=False)
+                                    error_messages={"Must Add Exercise":"Must Select An Exercise or Add Another One"},
+                                    )
     class Meta:
         model = Set
-        fields = ['exercise', 'reps', 'weight']
+        fields = ['exercise', 'reps', 'weight' ,"new_exercise"]
         
     def clean(self):
         cleaned_data = super().clean()
@@ -90,7 +96,7 @@ class SetForm(forms.ModelForm):
     
         
 SetFormSet = inlineformset_factory(WorkoutSession,Set,extra=5,validate_min=True , 
-                                   min_num=1, max_num=5,exclude=('workout_session',)) #add validate_max=True? can_delete=True
+                                   min_num=1, max_num=5,can_delete=False,exclude=('workout_session',)) #add validate_max=True? can_delete=True
 class BugForm(forms.Form):
     """Does not need a model; send straight to email"""
     #Extra : Next sprint cycle => autopopulate to user whom has an account their email address
@@ -98,7 +104,7 @@ class BugForm(forms.Form):
                              help_text="Enter email incase we need to follow up on the bug",
                              error_messages={"Invalid":"Invalid Email Address"}
                              ,empty_value="Your email")
-    desc = forms.TextInput() #TODO 
+    desc = forms.CharField() 
     type = forms.RadioSelect(choices=[("Severe","Severe"),
                                       ("Not Severe", 'Not Severe'),
                                       ("Suggestion", "Suggesstion"),]) #Extra

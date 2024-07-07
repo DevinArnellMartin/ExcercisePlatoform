@@ -15,5 +15,5 @@ urlpatterns = [
     path('updateWorkout/<int:id>',v.update_WorkoutSession,name="update_WorkoutSession"),
     path('detail/<int:id>/<str:title>',v.WorkoutSessionDetail.as_view(),name="WorkoutSessionDetail"), 
     path('bug/',v.bug, name="bug_report"),
-    
+    path('workout-statistics/',v.view_statistics, name="statistics"),
 ]

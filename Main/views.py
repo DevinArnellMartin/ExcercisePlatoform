@@ -1,6 +1,4 @@
-from typing import Any
 from django.db.models.base import Model as Model
-from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect, get_object_or_404
 from Main.models import *
 from .forms import *
@@ -12,23 +10,33 @@ from django.views.generic.detail import DetailView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.views.generic.edit import FormMixin
-from django.http import HttpResponse, HttpResponseNotAllowed
+from django.http import  HttpResponseNotAllowed
 import pandas  as pd
 import plotly.express as px
 import datetime
-
-
+from django.db.models import Count
+from .mailchimp_client import get_mailchimp_client
 User = get_user_model()
 context = {
-    "title":None
+      'title': "Welcome to Gymcel-Hell",
+        'registration': RegistrationForm(),
+        'bmi': None,
+        'bmi_plot': None,
+        'weight_plot': None,
+        "goal_bmi": None,
+        "H-W plot":None,
+        "conglomerate_plot":None,
+        "exercise_circle_graph":None,
+}
+
+statistical_context ={
+    "favorite_exercise" : None ,
+    "custom-plot": CustomGraphForm(),
+    "favorite_type": None,
+    "bmi_plot":None,
 }
 
 
-
-#TODO DEVIN:
-# Create superusers  & create a bunch of model objects through a super user and use it for dataframes
-# Push it to PostgresSQL DB on Render so website authentication works and test further on website any potential bugs
 """
 "id" is a the PK (actually called "id" ) of the Member field
 """
@@ -64,7 +72,7 @@ class WorkoutSessionListSearch(ListView):
         iexact = case insensitive
         Might be able to use slug-slug matches any ASCII characters & i think any field
         """
-        keyword = self.request.GET.get('keyword') #keyword is value in the URL definition in urls.py <str:keyword>
+        keyword = self.request.GET.get('keyword') 
         user = self.request.user
         if keyword is not None:
             try:
@@ -100,7 +108,16 @@ def log_weight(request):
     else:
         form = WeightHeightEntryForm()
     
-    return render(request, 'bmi.html', {'form': form})
+    return render(request, 'totalHistory.html', {'form': form})
+
+
+def view_statistics(request):
+    #TODO Extra Could be moved to next sprint cycle - Make a chart-based on X and Y and Z axis
+    profile = Profile.objects.get(user=request.user)
+    #TODO Fix these relationships: Should display most commonly done exercise and type of execerise. As of now, both return None
+    statistical_context['favorite_type'] = WorkoutSession.objects.filter(profile=profile).values('workout_type').annotate(wkt_count=Count('workout_type')).order_by('-wkt_count').first()
+    statistical_context['favorite_exercise'] = Set.objects.filter(workout_session__profile=profile).values('exercise__name').annotate(exercise_count=Count('exercise')).order_by('-exercise_count').first()
+    return render(request,'statistics.html', statistical_context)
 
 
 def bug(request):
@@ -110,45 +127,30 @@ def bug(request):
     return render(request,'bug.html', context)
 
 def home(request):
-    #TODO or Work Around the Homepage rendering everything - maybe can use global context dictionary and selectively add Key-Value pairs
-    #TODO Extra Could be moved to next sprint cycle - Make a chart-based on X and Y and Z axis
     """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
-    #global context?
-    context = {
-        'title': "Welcome to Gymcel-Hell",
-        'registration': RegistrationForm(request.POST),
-        'bmi': None,
-        'bmi_plot': None,
-        'weight_plot': None,
-        "goal_bmi": None,
-        "H-W plot":None,
-        "conglomerate_plot":None,
-        "exercise_circle_graph":None,
-    }
+    context["registration"] =  RegistrationForm(request.POST)
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
-        curr_bmi = profile.weight / (profile.height **2)  #no 
 
         context['title'] = f"{request.user}'s Gym"
         context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile__user=request.user.id)
         context['createWorkoutSession'] = WorkoutSessionForm()
-        context['bmi'] = curr_bmi
+        context['bmi'] = profile.BMI
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
         context["formset"] = SetFormSet()
         context["H-W form"] = WeightHeightEntryForm(request.POST)
       
-        #TODO Fix 
+        #TODO Slice [:x] making X an adjustable parameter
         bmi_data = {
-        'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions']],
-        'height': [profile.height for _ in range(len(context['UserWorkoutSessions']))]
+        'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions'][:7]],
+        'height': [profile.height for _ in range(len(context['UserWorkoutSessions'][:7]))]
         }
 
         # Creating DataFrame and calculating BMI
         df_bmi = pd.DataFrame(bmi_data)
         df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
 
-         # Creating the scatter plot
         fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='Height vs. Weight', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
 
         context['bmi_plot'] = fig_bmi.to_html(full_html=False)
@@ -159,14 +161,6 @@ def home(request):
         # context['weight_plot'] = fig_weight.to_html(full_html=False)
 
         #TODO Height-to-weight Chart && Before Logout is Clicked =>> Force User to Enter Weight
-
-
-        #TODO Height-Weight-Time Plot
-        # df = px.data.iris()
-        # fig = px.scatter_3d(df, x='sepal_length', y='sepal_width', z='petal_width',
-        #       color='species')
-        # fig.show()
-        
 
     return render(request, 'home.html', context)
 
@@ -192,8 +186,6 @@ def logout(request):
     else:
         return HttpResponseNotAllowed(['POST', 'GET'])
 
-    
-   
 def create_WorkoutSession(request):
     #TODO Graphs do no show up after submit becuase   - maybe use global context dictionary?
     title = "Create Workout" 

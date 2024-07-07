@@ -1,0 +1,27 @@
+{% include "base.html" %}
+{% comment %} Can be used to render any graph full screen {% endcomment %}
+<html>
+<head>
+    <title>Workout Statistics</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+{{ bmi }}
+<body>
+    <h1>BMI Scatter Plot</h1>
+    <div id="plotly-chart">{{ bmi_plot |safe }}</div>
+    <h1>Height & Weight Plot</h1>
+    <div id="plotly-chart">{{ bmi_plot |safe }}</div>
+    <h1>Create-Your-Own Plot</h1>
+
+<p>Want to get a reminder to workout, <a href="#" >click me!</a> </p>
+
+<h1>Workout Statistics</h1>
+
+<h2>Favorite Workout:</h2>
+<p>{{ favorite_exercise}} times</p>
+
+<h2>Favorite Type </h2>
+<p>{{ favorite_type}} times</p>
+
+</body>
+</html>

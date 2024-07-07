@@ -1,5 +1,6 @@
-<form method="POST" action="{% url 'main:updateRecipe'  recipe.recipe_id %}" >
+{% include "base.html" %}
+<form method="POST" action="{% url 'main:updateWorkout'  workout.id %}" >
     {% csrf_token %}
-    {{ updateRecipe.as_p }}
+    {{ updateWorkoutSession.as_p }}
     <input value="Update" type="Submit"> 
 </form>

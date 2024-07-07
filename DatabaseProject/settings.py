@@ -146,7 +146,7 @@ AUTH_USER_MODEL = 'Main.User'
 
 #TODO Reminder Feature: Set on Render: DatbaseProject/celery.py and Main/task.py help this functionality
 EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-SENDGRID_SANDBOX_MODE_IN_DEBUG = False if "RENDER" in os.environ else True 
+MAILCHIMP_API_KEY = "eb8e923b0b05fdceb2244650770d2f6d-us17" #os.environ.get('MAILCHIMP_API_KEY') 
+MAILCHIMP_SERVER_PREFIX = os.environ.get('MAILCHIMP_SERVER_PREFIX')
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
