@@ -14,7 +14,7 @@
                         <div class="list-group-item">
                             <a href="{% url 'main:WorkoutSessionDetail' workout.id workout.title %}" class="list-group-item-action">{{ workout.title }}</a>
                             <div class="d-flex justify-content-between mt-2">
-                                <a href="{% url 'main:delete_WorkoutSession' workout.title workout.id %}" class="btn btn-danger btn-sm">Delete {{ workout.title }}</a>
+                                <a href="{% url 'main:delete_WorkoutSession' workout.title workout.id  %}" class="btn btn-danger btn-sm">Delete {{ workout.title }}</a>
                                 <a href="{% url 'main:update_WorkoutSession' workout.id %}" class="btn btn-warning btn-sm">Update {{ workout.title }}</a>
                             </div>
                         </div>
@@ -58,8 +58,7 @@
                     <div id="sets">
                         {% for f in formset %}
                             <div class="set-form border p-3 mb-2">
-                                {{ f.labels.exercise_name }}
-                                {% comment %} Hidden fields for each form in the formset{% endcomment %}
+                                {{ f.non_field_errors }}
                                 {% for hidden in f.hidden_fields %}
                                     {{ hidden }}
                                 {% endfor %}
@@ -79,8 +78,6 @@
                     <button type="submit" class="btn btn-primary">Create</button>
                 </form>
             </div>
-            
-            
         
         {% else %}
             <div class="register-section my-4">

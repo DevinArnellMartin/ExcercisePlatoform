@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Count
 
 """
 to_field attr => lets Django know which field to reference of the relationship default would be the primary key which is usually a number
@@ -22,6 +23,7 @@ class Profile(models.Model):
     BMI = models.FloatField(null=True, blank=True)  
     Goal_BMI = models.FloatField(null=True , blank=True)
     Goal_Weight = models.FloatField(null=True, blank=True)
+    send_reminders = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
         """Converts into appopriate units to calculate BMI"""
@@ -31,6 +33,26 @@ class Profile(models.Model):
             self.BMI = self.weight / (self.height ** 2) #TODO Keep track of change in BMI. This is initial BMI
         super(Profile, self).save(*args, **kwargs)
 
+    def get_favorite_exercise(self):
+        favorite_exercise = (
+            Set.objects.filter(workout_session__profile=self)
+            .values('exercise__name')
+            .annotate(exercise_count=Count('exercise'))
+            .order_by('-exercise_count')
+            .first()
+        )
+        return favorite_exercise['exercise__name'] if favorite_exercise else None
+
+    def get_favorite_type(self):
+        favorite_type = (
+            WorkoutSession.objects.filter(profile=self)
+            .values('workout_type')  # Adjust this line if workout_type is a foreign key
+            .annotate(type_count=Count('workout_type'))
+            .order_by('-type_count')
+            .first()
+        )
+        return favorite_type['workout_type'] if favorite_type else None
+        
     def __str__(self):
         return self.user.username
 

@@ -15,7 +15,10 @@ import pandas  as pd
 import plotly.express as px
 import datetime
 from django.db.models import Count
-from .mailchimp_client import get_mailchimp_client
+from django.core.mail import send_mail
+import DatabaseProject.settings as settings
+
+
 User = get_user_model()
 context = {
       'title': "Welcome to Gymcel-Hell",
@@ -35,11 +38,6 @@ statistical_context ={
     "favorite_type": None,
     "bmi_plot":None,
 }
-
-
-"""
-"id" is a the PK (actually called "id" ) of the Member field
-"""
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
@@ -114,17 +112,57 @@ def log_weight(request):
 def view_statistics(request):
     #TODO Extra Could be moved to next sprint cycle - Make a chart-based on X and Y and Z axis
     profile = Profile.objects.get(user=request.user)
-    #TODO Fix these relationships: Should display most commonly done exercise and type of execerise. As of now, both return None
-    statistical_context['favorite_type'] = WorkoutSession.objects.filter(profile=profile).values('workout_type').annotate(wkt_count=Count('workout_type')).order_by('-wkt_count').first()
-    statistical_context['favorite_exercise'] = Set.objects.filter(workout_session__profile=profile).values('exercise__name').annotate(exercise_count=Count('exercise')).order_by('-exercise_count').first()
+    #TODO Fix these relationships: Should display most commonly done exercise and type of execerise. #GOTO model.py and fix these methods
+    statistical_context['favorite_type'] = profile.get_favorite_type()
+    statistical_context['favorite_exercise'] = profile.get_favorite_exercise()
     return render(request,'statistics.html', statistical_context)
 
 
+def tutorial_view(request):
+    return render(request, 'tutorial.html')
+
 def bug(request):
-    context = {
-        "bug":BugForm(request.POST)
-    }
-    return render(request,'bug.html', context)
+    #TODO Figure out why the email always fails: check @ bottom of settings.py. Delete fail_silently to see if the email sends
+    form = BugForm(request.POST)
+    if form.is_valid():
+             subject = f"{form.cleaned_data['bug_type']} Bug Report:{request.user} "
+             message = f"{form.cleaned_data['desc']}"
+             from_email = f'{form.cleaned_data['email']}'
+             send_mail(subject, message, from_email,recipient_list=['devin.martin.lpa@gmail.com'],fail_silently=True)
+             redirect("main:home")
+    else:
+        form =BugForm()
+    
+    
+    return render(request,'bug.html',{"bug":form})
+
+def remind(request):
+    #TODO Check if it works
+    """Straight from GPT"""
+    if request.method == "POST":
+        form = ReminderForm(request.POST)
+        if form.is_valid():
+            workout_types = form.cleaned_data['workout_type']
+            time_duration = form.cleaned_data['time_duration']
+            receiver = form.cleaned_data['receiver']
+            
+            # Schedule email sending (we can use a task queue like Celery in a real-world scenario)
+            subject = "Workout Reminder"
+            workout_names = ", ".join([workout.name for workout in workout_types])
+            message = f"Reminder: Your workout session for {workout_names} is scheduled at {time_duration}."
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [receiver]
+            
+            send_mail(subject, message, from_email, recipient_list)
+            
+            messages.success(request, "Reminder set successfully! An email will be sent to the provided address.")
+            return redirect('some_view_name')  # Replace with your desired redirect view
+
+    else:
+        form = ReminderForm()
+    
+    return render(request, 'reminder_form.html', {'form': form})
+
 
 def home(request):
     """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
@@ -215,20 +253,24 @@ def create_WorkoutSession(request):
     
     return render(request, 'home.html', {'createWorkoutSession': form, "formset": formset, "title": title})
 
-def update_WorkoutSession(request,WorkoutSession_id):
-    WorkoutSession = get_object_or_404(WorkoutSession, WorkoutSession_id=WorkoutSession_id )
-    title = f"Updating:{WorkoutSession.title}"
-    form = WorkoutSessionForm(request.POST, instance=WorkoutSession)
-    if form.is_valid():
+
+def update_WorkoutSession(request, WorkoutSession_id):
+    workout_session = get_object_or_404(WorkoutSession, pk=WorkoutSession_id)
+    title = f"Updating: {workout_session.title}"
+    if request.method == "POST":
+        form = WorkoutSessionForm(request.POST, instance=workout_session)
+        if form.is_valid():
             form.save()
             return redirect('main:home')
+    else:
+        form = WorkoutSessionForm(instance=workout_session)
+    return render(request, 'update.html', {'updateWorkoutSession': form, 'title': title, 'WorkoutSession': workout_session})
 
-    return render(request, 'update.html', {'updateWorkoutSession': form, 'title': title , 'WorkoutSession':WorkoutSession})
 
-def delete_WorkoutSession(request, title , WorkoutSession_id):
-    """On button,click delete the WorkoutSession associated with the button""" 
-    WorkoutSession = get_object_or_404(WorkoutSession, WorkoutSession_id=WorkoutSession_id , title=title)
-    WorkoutSession.delete()
+def delete_WorkoutSession(request, title, WorkoutSession_id):
+    """On button click, delete the WorkoutSession associated with the button"""
+    workout_session = get_object_or_404(WorkoutSession, pk=WorkoutSession_id, title=title)
+    workout_session.delete()
     return redirect('main:home')
     
 class WorkoutSessionDetail(DetailView):

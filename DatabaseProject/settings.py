@@ -88,9 +88,9 @@ DATABASES = {
         ssl_require=True
     ) if os.environ.get("DATABASE_URL") else {
         'ENGINE': 'django.db.backends.postgresql', #NOTE  Change to .mssql or check with Django docs to see test it on local instance
-        'NAME': "null",
-        'USER': "null", 
-        'PASSWORD': "null",
+        'NAME': "ExercisePlatformDB",
+        'USER': "postgres", 
+        'PASSWORD': "fuckinghell",
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -144,9 +144,12 @@ LOGIN_REDIRECT_URL = 'main:home'
 LOGOUT_REDIRECT_URL ='main:home'
 AUTH_USER_MODEL = 'Main.User'
 
-#TODO Reminder Feature: Set on Render: DatbaseProject/celery.py and Main/task.py help this functionality
-EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
-MAILCHIMP_API_KEY = "eb8e923b0b05fdceb2244650770d2f6d-us17" #os.environ.get('MAILCHIMP_API_KEY') 
-MAILCHIMP_SERVER_PREFIX = os.environ.get('MAILCHIMP_SERVER_PREFIX')
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
-
+#TODO Reminder Feature: Set on Render & TEST
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.mail.yahoo.com' 
+EMAIL_USE_SSL = False 
+EMAIL_PORT = 465 if EMAIL_USE_SSL is not False else 587
+EMAIL_USE_TLS = True 
+EMAIL_HOST_USER = os.environ.get("DEFAULT_FROM_EMAIL") 
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")   
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")  

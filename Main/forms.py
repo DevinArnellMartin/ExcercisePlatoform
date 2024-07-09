@@ -11,6 +11,7 @@ import plotly.express as px
 import pandas as pd 
 from django.core.exceptions import ValidationError
 from django.apps import apps
+import datetime
 
 
 User = get_user_model()
@@ -46,10 +47,23 @@ class RegistrationForm(UserCreationForm):
         return user
 
 class ReminderForm(forms.Form):
-    #TODO Implement
-    workout_type = None  # SHould be Multiselect with the fields in the Workout Model
-    time_duration = forms.DateTimeField(help_text="Enter in format:#TODO Figure out datetime format") #Help text
-    reciever = forms.EmailField(help_text="Email to recieve reminder. Could also use phone number if you know your carrier")
+    #TODO Check if works copied straight from GTP
+    workout_type = forms.ModelMultipleChoiceField(
+        queryset=WorkoutSession.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Select the types of workouts you want to be reminded about"
+    )
+    time_duration = forms.DateTimeField(
+        help_text="Enter the date and time for the reminder (format: YYYY-MM-DD HH:MM:SS)",
+        input_formats=['%Y-%m-%d %H:%M:%S']
+    )
+    receiver = forms.EmailField(help_text="Enter the email address to receive the reminder")
+    
+    def clean_time_duration(self):
+        time_duration = self.cleaned_data['time_duration']
+        if time_duration < datetime.now():
+            raise forms.ValidationError("The reminder time must be in the future.")
+        return time_duration
 
 class WorkoutSessionForm(forms.ModelForm):
     class Meta:
@@ -57,46 +71,55 @@ class WorkoutSessionForm(forms.ModelForm):
         fields = ['title',"workout_type" , "curr_body_weight","start_time","end_time"]
         #TODO Fix Curr_body_weight label make it more readible
 
+class SetForm(forms.ModelForm):
+    new_exercise = forms.CharField(
+        label="New Exercise",
+        help_text="Do not see an exercise? Add one here",
+        required=False,
+    )
 
-
-class SetForm(forms.Form):
-    #TODO Figure out why field is still not being added into this
-    new_exercise = forms.CharField(required=True,label="New Exercise",
-                                    help_text="Do not see an excercise: Add one",
-                                    error_messages={"Must Add Exercise":"Must Select An Exercise or Add Another One"},
-                                    )
     class Meta:
         model = Set
-        fields = ['exercise', 'reps', 'weight' ,"new_exercise"]
-        
+        fields = ['exercise', 'reps', 'weight', 'new_exercise']
+    
     def clean(self):
         cleaned_data = super().clean()
-        exercise_name = self.cleaned_data.get('exerciseName')
-        exercise = self.cleaned_data.get('exercise')
-
-        if not exercise_name and not exercise:
-            raise ValidationError("Must list an exercise")
-        if exercise_name == Exercise.objects.filter(name=exercise).exists():
-            raise ValidationError("Already exists")
+        exercise_name = cleaned_data.get('new_exercise')
+        exercise = cleaned_data.get('exercise')
+        reps = cleaned_data.get('reps')
         
-        if exercise not in Exercise.objects.filter and exercise is not None:
-            exercise, created = Exercise.objects.create(name=exercise_name)
+        if exercise and exercise.type == "CARDIO":
+            cleaned_data['reps'] = 0  # or disable reps fields
+        if not exercise_name and not exercise:
+            raise forms.ValidationError("Must list an exercise")
+        if exercise_name and Exercise.objects.filter(name=exercise_name).exists():
+            raise forms.ValidationError("Exercise with this name already exists")
+        
+        if exercise_name and not Exercise.objects.filter(name=exercise_name).exists():
+            exercise, created = Exercise.objects.get_or_create(name=exercise_name)
             self.instance.exercise = exercise
 
         return cleaned_data
 
-    def save(self,commit=True):
-        # exercise, created = Exercise.objects.get_or_create(name=exercise_name)
-        # exercise_name = self.cleaned_data.get('exercise_name')
-        # if exercise_name:
-        #     exercise, created = Exercise.objects.get_or_create(name=exercise_name)
-        #     self.instance.exercise = exercise
-        return super(SetForm, self).save(commit=commit)
+    def save(self, commit=True):
+        exercise_name = self.cleaned_data.get('new_exercise')
+        if exercise_name:
+            exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+            self.instance.exercise = exercise
+        return super().save(commit=commit)
+
+SetFormSet = inlineformset_factory(
+    WorkoutSession, 
+    Set, 
+    form=SetForm,
+    extra=5,
+    validate_min=True, 
+    min_num=1, 
+    max_num=5, 
+    can_delete=False,
+    exclude=('workout_session',)
+)
         
-    
-        
-SetFormSet = inlineformset_factory(WorkoutSession,Set,extra=5,validate_min=True , 
-                                   min_num=1, max_num=5,can_delete=False,exclude=('workout_session',)) #add validate_max=True? can_delete=True
 class BugForm(forms.Form):
     """Does not need a model; send straight to email"""
     #Extra : Next sprint cycle => autopopulate to user whom has an account their email address
@@ -104,14 +127,10 @@ class BugForm(forms.Form):
                              help_text="Enter email incase we need to follow up on the bug",
                              error_messages={"Invalid":"Invalid Email Address"}
                              ,empty_value="Your email")
-    desc = forms.CharField() 
-    type = forms.RadioSelect(choices=[("Severe","Severe"),
-                                      ("Not Severe", 'Not Severe'),
-                                      ("Suggestion", "Suggesstion"),]) #Extra
+    desc = forms.CharField(widget=forms.Textarea) 
+    severity = {"Severe":"Severe","Not Severe":"Not Severe", "Suggestion":"Suggestion"}
     
-    # type_widget = forms.ChoiceWidget(choices=[("Severe","Severe"),
-    #                                   ("Not Severe", 'Not Severe'),
-    #                                   ("Suggestion", "Suggesstion"),])#Extra
+    bug_type = forms.ChoiceField(widget=forms.RadioSelect,choices = severity)
     
     def clean(self) -> dict[str, Any]:
         """If valid, send. Else throw error."""

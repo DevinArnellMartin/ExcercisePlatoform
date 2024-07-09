@@ -1,6 +1,6 @@
 {% include "base.html" %}
-<form method="POST" action="{% url 'main:updateWorkout'  workout.id %}" >
+<form method="POST" action="{% url 'main:update_WorkoutSession' workout.id %}">
     {% csrf_token %}
     {{ updateWorkoutSession.as_p }}
-    <input value="Update" type="Submit"> 
+    <input value="Update" type="submit">
 </form>
