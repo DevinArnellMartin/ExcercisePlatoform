@@ -122,23 +122,26 @@ def tutorial_view(request):
     return render(request, 'tutorial.html')
 
 def bug(request):
-    #TODO Figure out why the email always fails: check @ bottom of settings.py. Delete fail_silently to see if the email sends
-    form = BugForm(request.POST)
-    if form.is_valid():
-             subject = f"{form.cleaned_data['bug_type']} Bug Report:{request.user} "
-             message = f"{form.cleaned_data['desc']}"
-             from_email = f'{form.cleaned_data['email']}'
-             send_mail(subject, message, from_email,recipient_list=['devin.martin.lpa@gmail.com'],fail_silently=True)
-             redirect("main:home")
+    if request.method == "POST":
+        form = BugForm(request.POST)
+        if form.is_valid():
+            subject = f"{form.cleaned_data['bug_type']} Bug Report: {request.user}"
+            message = form.cleaned_data['desc']
+            from_email = form.cleaned_data['email']
+            try:
+                send_mail(subject, message, from_email, recipient_list=['devin.martin.lpa@gmail.com'])
+                return redirect("main:home")
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+                form.add_error(None, "Failed to send email. Please try again later.")
     else:
-        form =BugForm()
-    
-    
-    return render(request,'bug.html',{"bug":form})
+        form = BugForm()
+
+    return render(request, 'bug.html', {"bug": form})
 
 def remind(request):
     #TODO Check if it works
-    """Straight from GPT"""
+    """"""
     if request.method == "POST":
         form = ReminderForm(request.POST)
         if form.is_valid():
@@ -146,7 +149,7 @@ def remind(request):
             time_duration = form.cleaned_data['time_duration']
             receiver = form.cleaned_data['receiver']
             
-            # Schedule email sending (we can use a task queue like Celery in a real-world scenario)
+           
             subject = "Workout Reminder"
             workout_names = ", ".join([workout.name for workout in workout_types])
             message = f"Reminder: Your workout session for {workout_names} is scheduled at {time_duration}."
@@ -156,7 +159,7 @@ def remind(request):
             send_mail(subject, message, from_email, recipient_list)
             
             messages.success(request, "Reminder set successfully! An email will be sent to the provided address.")
-            return redirect('some_view_name')  # Replace with your desired redirect view
+            return redirect('main:home')  
 
     else:
         form = ReminderForm()

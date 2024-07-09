@@ -47,7 +47,7 @@ class RegistrationForm(UserCreationForm):
         return user
 
 class ReminderForm(forms.Form):
-    #TODO Check if works copied straight from GTP
+    #TODO Check if works copied 
     workout_type = forms.ModelMultipleChoiceField(
         queryset=WorkoutSession.objects.all(),
         widget=forms.CheckboxSelectMultiple,
