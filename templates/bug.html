@@ -14,7 +14,9 @@
                         <form action="{% url 'main:bug_report' %}" method="POST">
                             {% csrf_token %}
                             <div class="form-group">
-                                {{ bug.as_p }}
+                                {% for field in bug %}
+                                <p>{{ field.label_tag }} {{ field }}</p>
+                                {% endfor %}
                             </div>
                             <button type="submit" class="btn btn-primary btn-block">Send</button>
                         </form>

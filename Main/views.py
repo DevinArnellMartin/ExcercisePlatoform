@@ -17,7 +17,9 @@ import datetime
 from django.db.models import Count
 from django.core.mail import send_mail
 import DatabaseProject.settings as settings
+import logging
 
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 context = {
@@ -122,6 +124,7 @@ def tutorial_view(request):
     return render(request, 'tutorial.html')
 
 def bug(request):
+    #TODO:Email backend:error in production but not development.
     if request.method == "POST":
         form = BugForm(request.POST)
         if form.is_valid():
@@ -132,8 +135,10 @@ def bug(request):
                 send_mail(subject, message, from_email, recipient_list=['devin.martin.lpa@gmail.com'])
                 return redirect("main:home")
             except Exception as e:
-                print(f"Failed to send email: {e}")
+                logger.error(f"Failed to send email: {e}")
                 form.add_error(None, "Failed to send email. Please try again later.")
+        else:
+            logger.debug(f"Form errors: {form.errors}")
     else:
         form = BugForm()
 
