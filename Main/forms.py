@@ -128,7 +128,11 @@ class BugForm(forms.Form):
                              error_messages={"Invalid":"Invalid Email Address"}
                              ,empty_value="Your email")
     desc = forms.CharField(widget=forms.Textarea) 
-    severity = {"Severe":"Severe","Not Severe":"Not Severe", "Suggestion":"Suggestion"}
+    severity = (
+                ("Severe","Severe"),
+                ("Not Severe","Not Severe"), 
+                ("Suggestion","Suggestion")
+                )
     
     bug_type = forms.ChoiceField(widget=forms.RadioSelect,choices = severity)
     
