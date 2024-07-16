@@ -1,0 +1,36 @@
+{% include "base.html" %}
+<head>
+    <title>Create Workout</title>
+</head>
+<div class="log-workout-section my-4">
+    <h2>Log a New Workout</h2>
+    <form method="POST" action="{% url 'main:createWorkoutSession' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.as_p }}
+        </div>
+        <div class="form-group">
+            {{ formset.management_form }}
+        </div>
+        <div id="sets">
+            {% for f in formset %}
+                <div class="set-form border p-3 mb-2">
+                    {% for hidden in f.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    <div class="form-row">
+                        {% for field in f.visible_fields %}
+                            <div class="form-group col-md-6">
+                                {{ field.label_tag }} {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+</div>    

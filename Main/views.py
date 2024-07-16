@@ -18,12 +18,10 @@ from django.db.models import Count
 from django.core.mail import send_mail
 import DatabaseProject.settings as settings
 import logging
-
 logger = logging.getLogger(__name__)
-
 User = get_user_model()
 context = {
-      'title': "Welcome to Gymcel-Hell",
+        'title': "Welcome to Gymcel",
         'registration': RegistrationForm(),
         'bmi': None,
         'bmi_plot': None,
@@ -32,6 +30,9 @@ context = {
         "H-W plot":None,
         "conglomerate_plot":None,
         "exercise_circle_graph":None,
+        'UserWorkoutSessions':None,
+        "form": None,
+        "formset":None,
 }
 
 statistical_context ={
@@ -39,6 +40,8 @@ statistical_context ={
     "custom-plot": CustomGraphForm(),
     "favorite_type": None,
     "bmi_plot":None,
+    "goal_weight":None,
+    "goal_bmi": None,
 }
 
 class CustomLoginView(LoginView):
@@ -62,7 +65,6 @@ class CustomLoginView(LoginView):
                 messages.error(request, "Invalid credentials")
         return render(request, self.template_name, context={'form': form})
 
-
 class WorkoutSessionListSearch(ListView):
     template_name = "search.html"
     model= WorkoutSession
@@ -72,21 +74,21 @@ class WorkoutSessionListSearch(ListView):
         iexact = case insensitive
         Might be able to use slug-slug matches any ASCII characters & i think any field
         """
+        #TODO Fix so that is parses through keywords in Workout Title. Extra: Make exact
         keyword = self.request.GET.get('keyword') 
         user = self.request.user
         if keyword is not None:
             try:
-                date_condition = Q(date__iexact=keyword,profile__iexact=user)
-                duration_condition = Q(duration__iexact=keyword,profile__iexact=user)
-                title_condition = Q(title__iexact=keyword,profile__iexact=user)
-                #Extra Feauture:EXACT search with combined_condition = & with all these . | means "OR"
+                date_condition = Q(date__iexact=keyword, profile__user__exact=user)
+                duration_condition = Q(duration__iexact=keyword, profile__user__exact=user)
+                title_condition = Q(title__iexact=keyword,profile__user__exact=user)
                 combined_condition =  date_condition | duration_condition | title_condition
 
-                matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition,profile__user=user) #TODO Check if can filter by both
+                matching_WorkoutSessions = WorkoutSession.objects.filter(combined_condition,profile__user=user) 
                 return matching_WorkoutSessions
             except Exception as e:   
-                messages.warning(self.request,f'{e}')
-                pass
+                messages.warning(self.request,"Internal Error")
+                # raise ValidationError(e)
 
         else: 
             return WorkoutSession.objects.filter(profile__user=user)
@@ -110,51 +112,52 @@ def log_weight(request):
     
     return render(request, 'totalHistory.html', {'form': form})
 
-
 def view_statistics(request):
-    #TODO Extra Could be moved to next sprint cycle - Make a chart-based on X and Y and Z axis
     profile = Profile.objects.get(user=request.user)
-    #TODO Fix these relationships: Should display most commonly done exercise and type of execerise. #GOTO model.py and fix these methods
-    statistical_context['favorite_type'] = profile.get_favorite_type()
+    #TODO Check if both of these keys below work. If not GOTO model.py and fix these methods
+    statistical_context['favorite_type'] = profile.get_favorite_type() 
     statistical_context['favorite_exercise'] = profile.get_favorite_exercise()
     return render(request,'statistics.html', statistical_context)
-
 
 def tutorial_view(request):
     return render(request, 'tutorial.html')
 
 def bug(request):
-    #TODO:Email backend:error in production but not development.
     if request.method == "POST":
         form = BugForm(request.POST)
         if form.is_valid():
-            subject = f"{form.cleaned_data['bug_type']} Bug Report: {request.user}"
-            message = form.cleaned_data['desc']
-            from_email = form.cleaned_data['email']
+            # form = form.save(commit=False)
+            subject = f"{form.cleaned_data['Bug_Type']} Bug Report: {request.user}"
+            message = form.cleaned_data['Description']
+            from_email = form.cleaned_data['Email']
             try:
-                send_mail(subject, message, from_email, recipient_list=['devin.martin.lpa@gmail.com'])
+                send_mail(subject, message, from_email, recipient_list=['devinmartin45654@yahoo.com'])
                 return redirect("main:home")
             except Exception as e:
-                logger.error(f"Failed to send email: {e}")
-                form.add_error(None, "Failed to send email. Please try again later.")
+                raise ValidationError(e)
         else:
-            logger.debug(f"Form errors: {form.errors}")
+            raise ValidationError("Form not valid")
     else:
         form = BugForm()
 
     return render(request, 'bug.html', {"bug": form})
 
-def remind(request):
-    #TODO Check if it works
-    """"""
-    if request.method == "POST":
-        form = ReminderForm(request.POST)
-        if form.is_valid():
+def edit_settings(request):
+    profile = get_object_or_404(Profile, user=request.user)
+    remind = ReminderForm(request.POST)
+    edit = ProfileForm(request.POST, instance=profile)
+    if edit.is_valid():
+            email = form.cleaned_data["Email"]
+            profile.user.email = email
+            edit.save()
+            messages.success(request,"Settings Saved!")
+            redirect("main:home")
+
+    if remind.is_valid():
             workout_types = form.cleaned_data['workout_type']
             time_duration = form.cleaned_data['time_duration']
             receiver = form.cleaned_data['receiver']
             
-           
             subject = "Workout Reminder"
             workout_names = ", ".join([workout.name for workout in workout_types])
             message = f"Reminder: Your workout session for {workout_names} is scheduled at {time_duration}."
@@ -163,50 +166,58 @@ def remind(request):
             
             send_mail(subject, message, from_email, recipient_list)
             
-            messages.success(request, "Reminder set successfully! An email will be sent to the provided address.")
-            return redirect('main:home')  
-
+            messages.success(request,"Reminder Sent")
+            redirect("main:home")
     else:
-        form = ReminderForm()
-    
-    return render(request, 'reminder_form.html', {'form': form})
-
+        form = ProfileForm()
+        remind = ReminderForm()
+    return render(request, 'edit_profile.html', {'edit': edit, 'remind':remind})
 
 def home(request):
-    """ EVERYTHING IS RENDERED FROM THIS LOGIC ON THE HOMEPAGE """
+    """Everything rendered from here"""
     context["registration"] =  RegistrationForm(request.POST)
+    graph_type_form = GraphTypeForm(request.POST or None)
+    context["graph_type_form"] = graph_type_form
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
 
         context['title'] = f"{request.user}'s Gym"
-        context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile__user=request.user.id)
-        context['createWorkoutSession'] = WorkoutSessionForm()
+        context['UserWorkoutSessions'] = WorkoutSession.objects.filter(profile__user=request.user.id).order_by('date')[:5]
+        context['createWorkoutSession'] = WorkoutSessionForm(request.POST)
         context['bmi'] = profile.BMI
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
-        context["formset"] = SetFormSet()
+        # context["formset"] = SetFormSet()
         context["H-W form"] = WeightHeightEntryForm(request.POST)
       
-        #TODO Slice [:x] making X an adjustable parameter
+        adjustable_param = 7 #TODO
         bmi_data = {
-        'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions'][:7]],
-        'height': [profile.height for _ in range(len(context['UserWorkoutSessions'][:7]))]
+            'weight': [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions'][:adjustable_param]],
+            'height': [profile.height for _ in range(len(context['UserWorkoutSessions'][:adjustable_param]))]
         }
 
         # Creating DataFrame and calculating BMI
         df_bmi = pd.DataFrame(bmi_data)
         df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
 
-        fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='Height vs. Weight', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
+        # Determine graph type
+        if graph_type_form.is_valid():
+            graph_type = graph_type_form.cleaned_data['graph_type']
+        else:
+            graph_type = 'scatter'  # Default graph type
+
+        if graph_type == 'line':
+            fig_bmi = px.line(df_bmi, x='height', y='weight', title='Height vs. Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+            fig_weight = px.line(x=list(range(len(bmi_data['weight']))), y=bmi_data['weight'], title='Weight Over Time', labels={'x': 'Session', 'y': 'Weight (kg)'})
+            fig_height_weight = px.line(df_bmi, x='height', y='weight', title='Height to Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+        else:
+            fig_bmi = px.scatter(df_bmi, x='height', y='weight', size='bmi', title='Height vs. Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+            fig_weight = px.scatter(x=list(range(len(bmi_data['weight']))), y=bmi_data['weight'], title='Weight Over Time', labels={'x': 'Session', 'y': 'Weight (kg)'})
+            fig_height_weight = px.scatter(df_bmi, x='height', y='weight', title='Height to Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
 
         context['bmi_plot'] = fig_bmi.to_html(full_html=False)
-
-        # Weight Chart
-        # weight_data = [getattr(session, "curr_body_weight") for session in context['UserWorkoutSessions']] 
-        # fig_weight = px.scatter(x=weight_data, y=weight_data, title='Weight Scatter Plot', labels={'x': 'Weight @ Workout', 'y': 'Weight'})
-        # context['weight_plot'] = fig_weight.to_html(full_html=False)
-
-        #TODO Height-to-weight Chart && Before Logout is Clicked =>> Force User to Enter Weight
+        context['weight_plot'] = fig_weight.to_html(full_html=False)
+        context['height_weight_plot'] = fig_height_weight.to_html(full_html=False)
 
     return render(request, 'home.html', context)
 
@@ -226,54 +237,63 @@ def registration(request):
 
 def logout(request):
     if request.method == 'POST' or request.method == 'GET':
-        #redirect()
+        context["title"] = "Welcome to Gymcell"
         dj_logout(request)
         messages.success(request,"Logout Successful")
     else:
         return HttpResponseNotAllowed(['POST', 'GET'])
 
 def create_WorkoutSession(request):
-    #TODO Graphs do no show up after submit becuase   - maybe use global context dictionary?
-    title = "Create Workout" 
+    #TODO Fix it so when exercise is added, it submits the form still
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
         formset = SetFormSet(request.POST) 
-        #TODO:Actually test if the SetForm works as intended
         if form.is_valid() and formset.is_valid():
             profile = get_object_or_404(Profile, user=request.user)
             workout_session = form.save(commit=False)
             workout_session.profile = profile
+
             start_time = form.cleaned_data['start_time']
             end_time = form.cleaned_data['end_time']
             workout_session.curr_body_weight = profile.weight
-            duration = datetime.datetime.combine(datetime.date.today(), end_time) - datetime.datetime.combine(datetime.date.today(), start_time) #Added 
-            workout_session.duration = duration 
-            workout_session.save()
-            sets = formset.save(commit=False)
-            for set in sets:
-                set.workout_session = workout_session
-                set.save()
-            formset.save_m2m()
-            return redirect('main:home')
-    else:  
-        form = WorkoutSessionForm()
-        formset = SetFormSet()
-    
-    return render(request, 'home.html', {'createWorkoutSession': form, "formset": formset, "title": title})
 
+            duration = datetime.datetime.combine(
+                datetime.date.today(), end_time
+            ) - datetime.datetime.combine(
+                datetime.date.today(), start_time
+            )
+            workout_session.duration = duration
+            workout_session.save()
+
+            sets = formset.save(commit=False)
+            for set_instance in sets:
+                set_instance.workout_session = workout_session
+                set_instance.save()
+            
+            formset.save_m2m()   
+            messages.success(request, "Workout Created")
+            return redirect('main:home')
+        else:
+            # Debugging: Print form and formset errors
+            print(form.errors)
+            print(formset.errors)
+    else:
+        form = WorkoutSessionForm()
+        formset = SetFormSet(queryset=Set.objects.none())  
+    
+    return render(request, 'create.html', {"form": form, "formset": formset})
 
 def update_WorkoutSession(request, WorkoutSession_id):
-    workout_session = get_object_or_404(WorkoutSession, pk=WorkoutSession_id)
-    title = f"Updating: {workout_session.title}"
-    if request.method == "POST":
+    workout_session = get_object_or_404(WorkoutSession, id=WorkoutSession_id)
+    if request.method == 'POST':
         form = WorkoutSessionForm(request.POST, instance=workout_session)
         if form.is_valid():
             form.save()
             return redirect('main:home')
     else:
         form = WorkoutSessionForm(instance=workout_session)
-    return render(request, 'update.html', {'updateWorkoutSession': form, 'title': title, 'WorkoutSession': workout_session})
-
+    
+    return render(request, 'update.html', {'updateWorkoutSession': form, 'workout_session': workout_session})
 
 def delete_WorkoutSession(request, title, WorkoutSession_id):
     """On button click, delete the WorkoutSession associated with the button"""

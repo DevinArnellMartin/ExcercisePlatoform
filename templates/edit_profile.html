@@ -1,0 +1,51 @@
+{% include "base.html" %}
+<head>
+    <title>Settings</title>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2>Edit Profile</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{% url 'main:settings' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                {% for field in edit %}
+                                <p>{{ field.label_tag }} {{ field }}</p>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2>Reminder</h2>
+                    </div>
+                    <div class="card-body">
+                        <form action="{% url 'main:settings' %}" method="POST">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                {% for field in remind %}
+                                <p>{{ field.label_tag }} {{ field }}</p>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>

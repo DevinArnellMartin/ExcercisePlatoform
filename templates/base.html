@@ -8,6 +8,7 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
+        <div id="message-container">
         {% if messages %}
                 <ul class="messages">
                 {% for message in messages %}
@@ -15,7 +16,7 @@
                 {% endfor %}
                 </ul>
         {% endif %}
-       
+        </div>
         {% block navbar %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="collapse navbar-collapse" id="navbarNav">
@@ -30,6 +31,7 @@
                                     </li>
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:home' %}">Home</a></li> 
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:statistics' %}">Statistics</a></li> 
+                                <li class="nav-item"><a class="nav-link" href="{% url 'main:settings' %}">Settings</a></li> 
                                 {% else %}
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:login' %}">Login</a></li>
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:registration' %}">Registration</a></li>
@@ -62,4 +64,16 @@
         crossorigin="anonymous"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+
+<script>
+        function hideMessages() {
+            var messageContainer = document.getElementById('message-container');
+            if (messageContainer) {
+                setTimeout(function() {
+                    messageContainer.style.display = 'none';
+                }, 5000); 
+            }
+        }
+        window.onload = hideMessages;
+    </script>
 </body>

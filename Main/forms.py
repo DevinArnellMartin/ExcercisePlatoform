@@ -12,16 +12,20 @@ import pandas as pd
 from django.core.exceptions import ValidationError
 from django.apps import apps
 import datetime
-
-
+from django.forms import inlineformset_factory, BaseInlineFormSet
 User = get_user_model()
-
 
 class CustomLoginForm(AuthenticationForm):
     remember_me = forms.BooleanField(required=False, initial=True, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     class Meta:
         model = Profile 
-        
+
+class ProfileForm(forms.ModelForm):
+    Email = forms.EmailField()
+    class Meta:
+        model = Profile
+        fields = ['Goal_BMI',"Goal_Weight" ,"send_reminders"]
+
 class RegistrationForm(UserCreationForm):
     height = forms.FloatField(label="Height (m)")
     weight = forms.FloatField(label="Weight (kg)")
@@ -48,16 +52,16 @@ class RegistrationForm(UserCreationForm):
 
 class ReminderForm(forms.Form):
     #TODO Check if works copied 
-    workout_type = forms.ModelMultipleChoiceField(
-        queryset=WorkoutSession.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        help_text="Select the types of workouts you want to be reminded about"
+    Workout_Type = forms.ModelMultipleChoiceField(
+            queryset=WorkoutSession.objects.values_list('workout_type', flat=True).distinct(),
+            widget=forms.CheckboxSelectMultiple,
+            help_text="Select the type of workouts you want to be reminded to do "
     )
-    time_duration = forms.DateTimeField(
+    Time_Duration = forms.DateTimeField(
         help_text="Enter the date and time for the reminder (format: YYYY-MM-DD HH:MM:SS)",
         input_formats=['%Y-%m-%d %H:%M:%S']
     )
-    receiver = forms.EmailField(help_text="Enter the email address to receive the reminder")
+    Recipient = forms.EmailField(help_text="Enter the email address to receive the reminder") #or get email from profile
     
     def clean_time_duration(self):
         time_duration = self.cleaned_data['time_duration']
@@ -70,6 +74,12 @@ class WorkoutSessionForm(forms.ModelForm):
         model = WorkoutSession
         fields = ['title',"workout_type" , "curr_body_weight","start_time","end_time"]
         #TODO Fix Curr_body_weight label make it more readible
+
+class RequiredFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if not any([form.has_changed() for form in self.forms]):
+            raise forms.ValidationError("At least one form must be filled out.")
 
 class SetForm(forms.ModelForm):
     new_exercise = forms.CharField(
@@ -88,8 +98,8 @@ class SetForm(forms.ModelForm):
         exercise = cleaned_data.get('exercise')
         reps = cleaned_data.get('reps')
         
-        if exercise and exercise.type == "CARDIO":
-            cleaned_data['reps'] = 0  # or disable reps fields
+        if exercise and exercise.exercise_type == "CARDIO":
+            cleaned_data['reps'] = 0 
         if not exercise_name and not exercise:
             raise forms.ValidationError("Must list an exercise")
         if exercise_name and Exercise.objects.filter(name=exercise_name).exists():
@@ -109,9 +119,10 @@ class SetForm(forms.ModelForm):
         return super().save(commit=commit)
 
 SetFormSet = inlineformset_factory(
-    WorkoutSession, 
-    Set, 
+    WorkoutSession,
+    Set,
     form=SetForm,
+    formset=RequiredFormSet,
     extra=5,
     validate_min=True, 
     min_num=1, 
@@ -119,22 +130,21 @@ SetFormSet = inlineformset_factory(
     can_delete=False,
     exclude=('workout_session',)
 )
-        
+   
 class BugForm(forms.Form):
     """Does not need a model; send straight to email"""
-    #Extra : Next sprint cycle => autopopulate to user whom has an account their email address
-    email = forms.EmailField(required=False,
+    Email = forms.EmailField(required=False,
                              help_text="Enter email incase we need to follow up on the bug",
                              error_messages={"Invalid":"Invalid Email Address"}
                              ,empty_value="Your email")
-    desc = forms.CharField(widget=forms.Textarea) 
+    Description = forms.CharField(widget=forms.Textarea) 
     severity = (
                 ("Severe","Severe"),
                 ("Not Severe","Not Severe"), 
                 ("Suggestion","Suggestion")
                 )
     
-    bug_type = forms.ChoiceField(widget=forms.RadioSelect,choices = severity)
+    Bug_Type = forms.ChoiceField(widget=forms.RadioSelect,choices = severity)
     
     def clean(self) -> dict[str, Any]:
         """If valid, send. Else throw error."""
@@ -146,7 +156,7 @@ class WeightHeightEntryForm(forms.ModelForm):
         fields = ['weight','height']
         labels = {'weight': 'Current Weight (kg)' ,'height': "Current Height (m)"}
 
-#TODO LATER- Extra Functionality - Creates Graph User Wants To See
+#TODO Extra Functionality - Creates Graph User Wants To See
 class CustomGraphForm(forms.Form):
     """Form so user can create custom graph to display data
     Y disabled in case they don't want a graph"""
@@ -198,3 +208,10 @@ class CustomGraphForm(forms.Form):
             fig = px.histogram(combined_df, x=x)
 
         return fig.to_html()
+
+class GraphTypeForm(forms.Form):
+    GRAPH_CHOICES = [
+        ('line', 'Line Graph'),
+        ('scatter', 'Scatter Plot')
+    ]
+    graph_type = forms.ChoiceField(choices=GRAPH_CHOICES, widget=forms.RadioSelect)

@@ -17,5 +17,5 @@ urlpatterns = [
     path('bug/',v.bug, name="bug_report"),
     path('workout-statistics/',v.view_statistics, name="statistics"),
     path('tutorial/', v.tutorial_view, name='tutorial'),
-    path('remind/', v.remind, name='remind'),
+    path('settings/', v.edit_settings, name='settings'),
 ]
