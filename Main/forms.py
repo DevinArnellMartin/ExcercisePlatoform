@@ -73,7 +73,6 @@ class WorkoutSessionForm(forms.ModelForm):
     class Meta:
         model = WorkoutSession
         fields = ['title',"workout_type" , "curr_body_weight","start_time","end_time"]
-        #TODO Fix Curr_body_weight label make it more readible
 
 class RequiredFormSet(BaseInlineFormSet):
     def clean(self):
@@ -100,18 +99,18 @@ class SetForm(forms.ModelForm):
         
         if exercise and exercise.exercise_type == "CARDIO":
             cleaned_data['reps'] = 0 
+            
         if not exercise_name and not exercise:
             raise forms.ValidationError("Must list an exercise")
-        if exercise_name and Exercise.objects.filter(name=exercise_name).exists():
+        elif exercise_name and Exercise.objects.filter(name=exercise_name).exists():
             raise forms.ValidationError("Exercise with this name already exists")
-        
-        if exercise_name and not Exercise.objects.filter(name=exercise_name).exists():
+        elif exercise_name and not Exercise.objects.filter(name=exercise_name).exists():
             exercise, created = Exercise.objects.get_or_create(name=exercise_name)
             self.instance.exercise = exercise
 
         return cleaned_data
 
-    def save(self, commit=True):
+    def save(self, commit=False):
         exercise_name = self.cleaned_data.get('new_exercise')
         if exercise_name:
             exercise, created = Exercise.objects.get_or_create(name=exercise_name)

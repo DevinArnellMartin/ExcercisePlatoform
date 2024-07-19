@@ -187,7 +187,6 @@ def home(request):
         context['bmi'] = profile.BMI
         context['registration'] = None
         context["goal_bmi"] = profile.Goal_BMI
-        # context["formset"] = SetFormSet()
         context["H-W form"] = WeightHeightEntryForm(request.POST)
       
         adjustable_param = 7 #TODO
@@ -207,7 +206,7 @@ def home(request):
             graph_type = 'scatter'  # Default graph type
 
         if graph_type == 'line':
-            fig_bmi = px.line(df_bmi, x='height', y='weight', title='Height vs. Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
+            fig_bmi = px.line(df_bmi, x='height', y='weight', title='Height vs. Weight', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
             fig_weight = px.line(x=list(range(len(bmi_data['weight']))), y=bmi_data['weight'], title='Weight Over Time', labels={'x': 'Session', 'y': 'Weight (kg)'})
             fig_height_weight = px.line(df_bmi, x='height', y='weight', title='Height to Weight', labels={'height': 'Height (cm)', 'weight': 'Weight (kg)'})
         else:
@@ -244,7 +243,7 @@ def logout(request):
         return HttpResponseNotAllowed(['POST', 'GET'])
 
 def create_WorkoutSession(request):
-    #TODO Fix it so when exercise is added, it submits the form still
+    #TODO Fixed- make sure to show erroes on Tempalte
     if request.method == 'POST':
         form = WorkoutSessionForm(request.POST)
         formset = SetFormSet(request.POST) 
@@ -274,14 +273,14 @@ def create_WorkoutSession(request):
             messages.success(request, "Workout Created")
             return redirect('main:home')
         else:
-            # Debugging: Print form and formset errors
+            #TODO Print on HTML.
             print(form.errors)
             print(formset.errors)
     else:
         form = WorkoutSessionForm()
         formset = SetFormSet(queryset=Set.objects.none())  
     
-    return render(request, 'create.html', {"form": form, "formset": formset})
+    return render(request, 'create.html', {"form": form, "formset": formset , "form_err": form.errors, "formset_err":formset.errors})
 
 def update_WorkoutSession(request, WorkoutSession_id):
     workout_session = get_object_or_404(WorkoutSession, id=WorkoutSession_id)

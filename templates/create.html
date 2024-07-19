@@ -6,6 +6,9 @@
     <h2>Log a New Workout</h2>
     <form method="POST" action="{% url 'main:createWorkoutSession' %}">
         {% csrf_token %}
+        <div class="alert alert-warning">
+            {{ form_err }}
+        </div>
         <div class="form-group">
             {{ form.as_p }}
         </div>
@@ -13,6 +16,9 @@
             {{ formset.management_form }}
         </div>
         <div id="sets">
+            <div class="alert alert-warning">
+                {{ formset_err }} <!--Show error-->
+            </div>
             {% for f in formset %}
                 <div class="set-form border p-3 mb-2">
                     {% for hidden in f.hidden_fields %}

@@ -1,21 +1,27 @@
 {% include "base.html" %}
 <title> Workout History Search </title>
 
-<form action="{% url 'main:WorkoutSessionSearch' %}" method="GET">
-    Search <input type="text" name="keyword" value="{{ keyword }}" placeholder="Keyword Search"/>
-    <input type="submit" name="submit" value="search"/>
-</form>
+<div class="container mt-4">
+    <h1 class="mb-4">Workout History Search</h1>
+    <form action="{% url 'main:WorkoutSessionSearch' %}" method="GET" class="form-inline">
+        <div class="form-group mb-2">
+            <label for="keyword" class="sr-only">Search</label>
+            <input type="text" class="form-control" id="keyword" name="keyword" value="{{ keyword }}" placeholder="Keyword Search"/>
+        </div>
+        <button type="submit" class="btn btn-primary mb-2 ml-2">Search</button>
+    </form>
 
-<h1>Results</h1>
-        {% for workout in object_list %} {% comment %}#TODO:PRETTIFY {% endcomment%}
-            <a href="{% url 'main:WorkoutSessionDetail' workout.id workout.title  %}">{{ workout.title }}</a>
+    <h2 class="mt-4">Results</h2>
+    <div class="list-group">
+        {% for workout in object_list %}
+            <a href="{% url 'main:WorkoutSessionDetail' workout.id workout.title %}" class="list-group-item list-group-item-action">{{ workout.title }}</a>
         {% endfor %}
+    </div>
 
-{% if not object_list  and  user.is_authenticated %}
-<p> No record of that workout. Add it <a href="{% url 'main:createWorkoutSession' %}">here</a></p>
-{% endif %}
-
-
+    {% if not object_list and user.is_authenticated %}
+        <p class="mt-4">No record of that workout. Add it <a href="{% url 'main:createWorkoutSession' %}">here</a></p>
+    {% endif %}
+</div>
 
     
         

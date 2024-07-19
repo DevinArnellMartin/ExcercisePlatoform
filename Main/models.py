@@ -110,7 +110,7 @@ class WorkoutSession(models.Model):
 
 class Set(models.Model):
     workout_session = models.ForeignKey(WorkoutSession, on_delete=models.CASCADE)
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    exercise = models.ForeignKey(Exercise,blank=True , on_delete=models.CASCADE)
     reps = models.IntegerField()
     weight = models.FloatField() # of equipment
     

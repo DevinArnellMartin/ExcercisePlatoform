@@ -23,10 +23,10 @@
                         <ul class="navbar-nav flex-column">
                                 {% if user.is_authenticated %}  
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:WorkoutSessionSearch' %}">Workouts</a></li>
-                                <li class="nav-item">
-                                        <form action="{% url 'main:logout' %}" method="post">
+                                <li class="nav-item"> <!-- This is going to annoy me fix it -->
+                                        <form action="{% url 'main:logout' %}" method="post" class="form-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="nav-link" style="border: none; background: none; cursor: pointer;">Logout</button>
+                                            <button type="submit" class="nav-link btn btn-link p-0" style="cursor: pointer;">Logout</button>
                                         </form>
                                     </li>
                                 <li class="nav-item"><a class="nav-link" href="{% url 'main:home' %}">Home</a></li> 
