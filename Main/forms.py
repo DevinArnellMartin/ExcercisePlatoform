@@ -176,7 +176,7 @@ class CustomGraphForm(forms.Form):
         cleaned_data = self.cleaned_data
         x = cleaned_data.get("x")
         y = cleaned_data.get("y")
-
+        #TODO Clean string representation to make this work.
         matching_models = []
         for model in apps.get_models():
             fields = [f.name for f in model._meta.get_fields()]
@@ -184,7 +184,7 @@ class CustomGraphForm(forms.Form):
                 matching_models.append(model)
 
         if not matching_models:
-            raise ValidationError("No matching models found for the provided fields.")
+            raise ValidationError("No matching categories found for the provided fields.")
 
         data_frames = []
         for model in matching_models:

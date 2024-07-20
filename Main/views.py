@@ -29,19 +29,22 @@ context = {
         "goal_bmi": None,
         "H-W plot":None,
         "conglomerate_plot":None,
-        "exercise_circle_graph":None,
+        "exercise_circle_graph":None, #TODO Circle graph of ratio of all different exercises done
         'UserWorkoutSessions':None,
         "form": None,
         "formset":None,
+        "goal_weight":None,
 }
 
 statistical_context ={
     "favorite_exercise" : None ,
-    "custom-plot": CustomGraphForm(),
+    "bmi-plot": None, #TODO Implement again or delete
+    "create": CustomGraphForm(),
     "favorite_type": None,
-    "bmi_plot":None,
-    "goal_weight":None,
-    "goal_bmi": None,
+    "custom_plot":None,
+    "goal_weight":context["goal_weight"],
+    "goal_bmi": context["goal_bmi"],
+    "custom":"None",
 }
 
 class CustomLoginView(LoginView):
@@ -112,12 +115,28 @@ def log_weight(request):
     
     return render(request, 'totalHistory.html', {'form': form})
 
+def generate_custom_chart(chart_data):
+    df = pd.DataFrame(chart_data) 
+    fig = px.line(df, x='x_axis', y='y_axis') 
+    return fig.to_html(full_html=False)
+
 def view_statistics(request):
     profile = Profile.objects.get(user=request.user)
-    #TODO Check if both of these keys below work. If not GOTO model.py and fix these methods
     statistical_context['favorite_type'] = profile.get_favorite_type() 
     statistical_context['favorite_exercise'] = profile.get_favorite_exercise()
-    return render(request,'statistics.html', statistical_context)
+
+    if request.method == "POST":
+        form = CustomGraphForm(request.POST)
+        if form.is_valid():
+            chart_data = form.cleaned_data
+            custom_chart = generate_custom_chart(chart_data)
+            statistical_context['custom_chart'] = custom_chart
+        else:
+            statistical_context['create'] = form
+    else:
+        statistical_context['create'] = CustomGraphForm()
+
+    return render(request, 'statistics.html', statistical_context)
 
 def tutorial_view(request):
     return render(request, 'tutorial.html')
@@ -126,17 +145,15 @@ def bug(request):
     if request.method == "POST":
         form = BugForm(request.POST)
         if form.is_valid():
-            # form = form.save(commit=False)
-            subject = f"{form.cleaned_data['Bug_Type']} Bug Report: {request.user}"
+            subject = f"{form.cleaned_data['Bug_Type']}-Type Bug Report: {request.user}"
             message = form.cleaned_data['Description']
-            from_email = form.cleaned_data['Email']
             try:
-                send_mail(subject, message, from_email, recipient_list=['devinmartin45654@yahoo.com'])
+                send_mail(subject, message, "devinmartin45654@yahoo.com", recipient_list=['devin.martin.lpa@gmail.com'])
                 return redirect("main:home")
             except Exception as e:
-                raise ValidationError(e)
+                 messages.error(request,e)
         else:
-            raise ValidationError("Form not valid")
+            messages.error(request,form.errors.values())
     else:
         form = BugForm()
 

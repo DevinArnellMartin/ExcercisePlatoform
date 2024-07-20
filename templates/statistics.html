@@ -1,6 +1,4 @@
 {% include "base.html" %}
-{% comment %} Can be used to render any graph full screen {% endcomment %}
-<html>
 <head>
     <title>Workout Statistics</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -12,8 +10,25 @@
     <h1>Height & Weight Plot</h1>
     <div id="plotly-chart">{{ bmi_plot |safe }}</div>
     <h1>Create-Your-Own Plot</h1>
+    <!-- TODO: FIX! WONT WORK.-->
+    <form method="POST" action="{% url 'main:statistics' %}">
+        {% csrf_token %}
+        <!-- <div class="alert alert-warning">
+            {{ form_err }}
+        </div> -->
+        <div class="form-group">
+        {{ create.as_p }}
+        <button type="submit" class="btn btn-primary">Create</button>
+    </form>
 
-<p>Want to get a reminder to workout, <a href="#TODO" >click me!</a> </p>
+    {% if custom_chart %}
+    <div>
+        <h2>Custom Chart</h2>
+        {{ custom_chart|safe }}
+    </div>
+    {% endif %}
+
+<p>Want to get a reminder to workout, <a href="{% url 'main:settings' %}" >click me!</a> </p>
 
 <h1>Workout Statistics</h1>
 
@@ -24,4 +39,3 @@
 <p>{{ favorite_type}} </p>
 
 </body>
-</html>
