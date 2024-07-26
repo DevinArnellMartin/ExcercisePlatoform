@@ -5,16 +5,23 @@
     <title>{{ object.title }} - Workout </title>
 </head>
 
-<body>
-    <h1>{{ object.title }}</h1>
-        <p> {{ object.workout_type }}</p>
-        <p> {{ object.duration }}</p>
+<body class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">{{ object.title }}</h1>
+        </div>
+        <div class="card-body">
+            <p><strong>Workout Type:</strong> {{ object.workout_type }}</p>
+            <p><strong>Duration:</strong> {{ object.duration }}</p>
 
-
-        {% for set in sets %}
-        {{ set }}
-    {% endfor %}
+            <h2 class="mt-4">Sets</h2>
+            <ul class="list-group list-group-flush">
+                {% for set in sets %}
+                    <li class="list-group-item">{{ set }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </body>
-    
     
 

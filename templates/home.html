@@ -23,7 +23,11 @@
             <p><a href="{% url 'main:createWorkoutSession' %}">New Workout</a></p>
             <div class="journey-section my-4">
                 <h2>See your journey</h2>
-
+                <form action="{% url 'main:home' %}" method="post">
+                    {% csrf_token %}
+                    {{ graph_type_form.as_p }}
+                    <button type="submit" class="btn btn-primary">Toggle</button>
+                </form>
                 {% if bmi %}
                     <div class="alert alert-info">
                         <h4>Your Current BMI: {{ bmi }}</h4>

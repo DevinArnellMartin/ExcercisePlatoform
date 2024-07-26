@@ -13,6 +13,8 @@ from django.core.exceptions import ValidationError
 from django.apps import apps
 import datetime
 from django.forms import inlineformset_factory, BaseInlineFormSet
+import re
+from difflib import get_close_matches
 User = get_user_model()
 
 class CustomLoginForm(AuthenticationForm):
@@ -171,17 +173,38 @@ class CustomGraphForm(forms.Form):
             raise ValidationError("The independent variable (x) is required.")
 
         return cleaned_data
-
+    
     def save(self):
         cleaned_data = self.cleaned_data
         x = cleaned_data.get("x")
         y = cleaned_data.get("y")
-        #TODO Clean string representation to make this work.
+
+        def clean_string(input_str):
+            """Remove punctuation and convert to lowercase."""
+            input_str = re.sub(r'[^\w\s]', '', input_str)
+            return input_str.lower()
+
+        x_clean = clean_string(x)
+        y_clean = clean_string(y) if y else None
+
         matching_models = []
+        closest_matches = []
+
         for model in apps.get_models():
             fields = [f.name for f in model._meta.get_fields()]
-            if x in fields and (y in fields or y is None):
+            fields_clean = [clean_string(field) for field in fields]
+
+            if x_clean in fields_clean and (y_clean in fields_clean or y_clean is None):
                 matching_models.append(model)
+            else:
+                close_matches_x = get_close_matches(x_clean, fields_clean, n=1, cutoff=0.6)
+                close_matches_y = get_close_matches(y_clean, fields_clean, n=1, cutoff=0.6) if y_clean else []
+                
+                if close_matches_x and (not y_clean or close_matches_y):
+                    closest_matches.append((model, close_matches_x, close_matches_y))
+
+        if not matching_models and closest_matches:
+            matching_models = [closest_matches[0][0]]
 
         if not matching_models:
             raise ValidationError("No matching categories found for the provided fields.")

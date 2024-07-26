@@ -103,6 +103,7 @@ class WorkoutSessionListSearch(ListView):
     
 @login_required
 def log_weight(request):
+    """Redundant=> dont use"""
     if request.method == 'POST':
         form = WeightHeightEntryForm(request.POST)
         if form.is_valid():
@@ -164,16 +165,16 @@ def edit_settings(request):
     remind = ReminderForm(request.POST)
     edit = ProfileForm(request.POST, instance=profile)
     if edit.is_valid():
-            email = form.cleaned_data["Email"]
+            email = edit.cleaned_data["Email"]
             profile.user.email = email
             edit.save()
             messages.success(request,"Settings Saved!")
             redirect("main:home")
 
     if remind.is_valid():
-            workout_types = form.cleaned_data['workout_type']
-            time_duration = form.cleaned_data['time_duration']
-            receiver = form.cleaned_data['receiver']
+            workout_types = remind.cleaned_data['workout_type']
+            time_duration = remind.cleaned_data['time_duration']
+            receiver = remind.cleaned_data['receiver']
             
             subject = "Workout Reminder"
             workout_names = ", ".join([workout.name for workout in workout_types])
@@ -193,7 +194,7 @@ def edit_settings(request):
 def home(request):
     """Everything rendered from here"""
     context["registration"] =  RegistrationForm(request.POST)
-    graph_type_form = GraphTypeForm(request.POST or None)
+    graph_type_form = GraphTypeForm(request.POST)
     context["graph_type_form"] = graph_type_form
     if request.user.is_authenticated:
         profile = get_object_or_404(Profile, user=request.user)
@@ -212,7 +213,6 @@ def home(request):
             'height': [profile.height for _ in range(len(context['UserWorkoutSessions'][:adjustable_param]))]
         }
 
-        # Creating DataFrame and calculating BMI
         df_bmi = pd.DataFrame(bmi_data)
         df_bmi['bmi'] = df_bmi['weight'] / (df_bmi['height'] / 100) ** 2
 
@@ -220,7 +220,7 @@ def home(request):
         if graph_type_form.is_valid():
             graph_type = graph_type_form.cleaned_data['graph_type']
         else:
-            graph_type = 'scatter'  # Default graph type
+            graph_type = 'scatter' 
 
         if graph_type == 'line':
             fig_bmi = px.line(df_bmi, x='height', y='weight', title='Height vs. Weight', labels={'height': 'Height (m)', 'weight': 'Weight (kg)'})
@@ -246,7 +246,8 @@ def registration(request):
             login(request, user)
             return redirect('main:home')
         else:
-            messages.error(request, 'Those credentials do not work') 
+            errors = form.errors.values()
+            messages.error(request, errors) 
     else:
         form = RegistrationForm()
     return render(request, 'home.html', {'title': title, 'registration': form})
